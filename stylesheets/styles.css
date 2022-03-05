@@ -29,6 +29,10 @@ h2 {
   font-weight: 500;
 }
 
+h2 title {
+  color:#a21942;
+  font-weight: 500;
+}
 h3, h4, h5, h6 {
   color:#494949;
   font-weight: 500;
@@ -38,6 +42,7 @@ a {
   color:#a21942;
   text-decoration:none;
 }
+
 
 a:hover {
   color:#f88c99;
