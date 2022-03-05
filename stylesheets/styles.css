@@ -139,6 +139,23 @@ footer {
   -webkit-font-smoothing:subpixel-antialiased;
 }
 
+.button {
+  display:inline-block;
+  font-weight:500;
+  color:#a21942;
+  padding:0 20px;
+  border-radius:18px;
+  height:36px;
+  line-height:36px;
+  border:1px solid #d1174f;
+  font-size:13px;
+}
+
+.button:hover {
+  color:#050505;
+}
+
+
 @media print, screen and (max-width: 960px) {
 
   div.wrapper {
