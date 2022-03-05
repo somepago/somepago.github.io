@@ -141,14 +141,14 @@ footer {
 
 .button {
   display:inline-block;
-  font-weight:500;
+  font-weight:300;
   color:#a21942;
-  padding:0 20px;
-  border-radius:18px;
-  height:36px;
-  line-height:36px;
+  padding:0 10px;
+  border-radius:2px;
+  height:20;
+  line-height:20px;
   border:1px solid #d1174f;
-  font-size:13px;
+  font-size:11px;
 }
 
 .button:hover {
