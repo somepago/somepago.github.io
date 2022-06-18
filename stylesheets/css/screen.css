@@ -302,3 +302,9 @@ code {
   color: black;
   font-size: 0.8em;
 }
+
+img {
+  margin:24px 0;
+  width: 100%;
+  height: auto;
+}
