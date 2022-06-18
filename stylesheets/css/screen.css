@@ -263,3 +263,11 @@ article {
     display:none;
   }
 }
+
+nav_justify {
+  margin-top: 23px;
+  /* font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; */
+  font-size: 20px;
+  display: flex;
+  justify-content: space-between;
+}
