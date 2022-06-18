@@ -271,3 +271,12 @@ nav_justify {
   display: flex;
   justify-content: space-between;
 }
+
+.highlight .c {
+  color: #586E75;
+}
+
+code {
+  font-family: 'Bitstream Vera Sans Mono','Courier', monospace;
+  font-size: 14px;
+}
