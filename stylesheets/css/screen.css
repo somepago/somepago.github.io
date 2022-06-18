@@ -265,7 +265,7 @@ article {
 }
 
 nav_justify {
-  margin-top: 23px;
+  margin-top: 5px;
   /* font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; */
   font-size: 20px;
   display: flex;
@@ -294,4 +294,11 @@ code {
   font-family: 'Bitstream Vera Sans Mono','Courier', monospace;
   font-size: 14px;
   /* margin:24px 0; */
+}
+
+.sup {
+  position: relative;
+  bottom: 0.5em;
+  color: black;
+  font-size: 0.8em;
 }
