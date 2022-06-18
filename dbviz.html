@@ -1,228 +1,163 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="chrome=1">
-        <title>Can Neural Nets Learn the Same Model Twice?</title>
-    
-        <link rel="stylesheet" href="stylesheets/styles.css">
-        <!-- <link rel="stylesheet" href="stylesheets/pygment_trac.css"> -->
-        <link rel="stylesheet" href="stylesheets/extra_min_styles.css">
-    
-        <meta name="viewport" content="width=device-width">
-    
-            <!-- Icons -->
-        <link rel="stylesheet" href="stylesheets/css/academicons.css"/>
-        <link rel="stylesheet" href="stylesheets/css/font-awesome.css"/>
-        <link rel="stylesheet" href="stylesheets/css/academicons.min.css"/>
-        <link rel="stylesheet" href="stylesheets/style-svg.html">
-        <!--[if lt IE 9]>
-        <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-        <![endif]-->
-      </head>
-<article>
-<!-- <body data-new-gr-c-s-check-loaded="14.1063.0" data-gr-ext-installed="" cz-shortcut-listen="true"> -->
-    <div class="container" id="main">
-        <div class="row">
-            <h1 class="col-md-12 text-center">
-                Can Neural Nets Learn the Same Model Twice? <br> 
-                Investigating Reproducibility and Double Descent from the Decision Boundary Perspective<br> 
-                <small>
-                    CVPR 2022 (Oral)
-                </small>
-            </h1>
-        </div>
-        <div class="row">
-            <div class="col-md-12 text-center">
-                <div class="container">
-                    <nav_justify>
-                    <a href="https://somepago.github.io">Gowthami Somepalli</a>
-                    <a href="">Liam Fowl</a>
-                    <a href="">Arpit Bansal</a>
-                    <a href="">Ping Yeh-Chiang</a>
-                    </nav_justify>
-                    <br>
-                        <nav_justify>
-                        <a href="">Yehuda Dar</a>
-                        <a href="">Richard Baraniuk</a>
-                        <a href="">Micah Goldblum</a>
-                        <a href="">Tom Goldstein</a>
-                        </nav_justify>
-                        </div>
-                
-            </div>
-        </div>
+<html><head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="author" content="Steve Smith">
+    <title>Designing in the Build - Ordered List</title>
+    <link rel="stylesheet" href="/stylesheets/css/screen.css">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png">
+    <link type="application/atom+xml" rel="alternate" href="http://orderedlist.com/feed.xml" title="Ordered List">
+    <script id="twitter-wjs" src="//platform.twitter.com/widgets.js"></script><script type="text/javascript" async="" id="gauges-tracker" data-site-id="4d58af2e0184f6792e000003" src="//secure.gaug.es/track.js"></script><script src="/javascripts/scale.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  </head>
+<body>
+  <div class="content">
+    <header>
+  <h2><span><a href="/">ordered<span>list</span></a></span></h2>
+  <p>writing by <a href="https://twitter.com/orderedlist">steve smith</a></p>
+</header>
 
 
-        <div class="row">
-                <div class="col-md-4 col-md-offset-4 text-center">
-                    <ul class="nav nav-pills nav-justified">
-                        <li>
-                            <a href="https://arxiv.org/abs/2006.10739">
-                            <img src="./Fourier Feature Networks_files/ff_paper_image.png" height="60px">
-                                <h4><strong>Paper</strong></h4>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://github.com/tancik/fourier-feature-networks">
-                            <img src="./Fourier Feature Networks_files/github.png" height="60px">
-                                <h4><strong>Code</strong></h4>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-        </div>
+    <article>
+      <div align="center">
+  <h1 >Can Neural Nets Learn the Same Model Twice? Investigating Reproducibility and Double Descent from the Decision Boundary Perspective<br> 
+  </h1>
+      
+  <h3>
+    CVPR 2022 (Oral)
+  </h3>
 
+  <div class="row">
+        <div class="container">
+          <br>
+            <nav_justify>
+            <a href="https://somepago.github.io"> Gowthami Somepalli <span class="sup">1</span></a>
+            <a href="">Liam Fowl <span class="sup">1</span></a>
+            <a href="">Arpit Bansal <span class="sup">1</span></a>
+            <a href="">Ping Yeh-Chiang <span class="sup">1</span></a>
+          </nav_justify>
+          <nav_justify>
+            <a href="https://sites.google.com/view/yehuda-dar/">Yehuda Dar <span class="sup">2</span></a>
+            <a href="https://richb.rice.edu/">Richard Baraniuk <span class="sup">2</span> </a>
+            <a href="https://goldblum.github.io/">Micah Goldblum <span class="sup">3</span></a>
+            <a href="https://www.cs.umd.edu/~tomg/">Tom Goldstein <span class="sup">1</span></a>
+            </nav_justify>
+          </div>
+          <br>
+        <div class="container">
+            <nav_justify>
+              <p><span class="sup">1</span> University of Maryland, College Park</p>
+              <p><span class="sup">2</span> Rice University</p>
+              <p><span class="sup">3</span> New York University</p>
 
+            </nav_justify>
+          </div>
 
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <h3>
-                    Abstract
-                </h3>
-                <img src="./Fourier Feature Networks_files/teaser.png" class="img-responsive" alt="overview"><br>
-                <p class="text-justify">
-We show that passing input points through a simple Fourier feature mapping enables a multilayer perceptron (MLP) to learn high-frequency functions in low-dimensional problem domains. These results shed light on recent advances in computer vision and graphics that achieve state-of-the-art results by using MLPs to represent complex 3D objects and scenes. Using tools from the neural tangent kernel (NTK) literature, we show that a standard MLP fails to learn high frequencies both in theory and in practice. To overcome this spectral bias, we use a Fourier feature mapping to transform the effective NTK into a stationary kernel with a tunable bandwidth. We suggest an approach for selecting problem-specific Fourier features that greatly improves the performance of MLPs for low-dimensional regression tasks relevant to the computer vision and graphics communities.
-                </p>
-            </div>
-        </div>
-
-
-
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <h3>
-                    Overview Video
-                </h3>
-                <div class="text-center">
-                    <div style="position:relative;padding-top:56.25%;">
-                        <iframe src="./Fourier Feature Networks_files/nVA6K6Sn2S4.html" allowfullscreen="" style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <h3>
-                    Training a network without and with Fourier features
-                </h3>
-                <video id="v0" width="100%" autoplay="" loop="" muted="" controls="">
-                  <source src="img/lion_none_gauss_v1.mp4" type="video/mp4">
-                </video>
-                <p class="text-justify">
-                    In this paper, we train MLP networks to learn <em>low dimensional</em> functions, such as the function defined by an image that maps each (x, y) pixel coordinate to an output (r, g, b) color. A standard MLP is not able to learn such functions (blue border image). Simply applying a Fourier feature mapping to the input (x, y) points before passing them to the network allows for rapid convergence (orange border image). 
-                </p>
-                <p class="text-justify">
-                    This Fourier feature mapping is very simple. For an input point <b>v</b> (for the example above, (x, y) pixel coordinates) and a random Gaussian matrix <b>B</b>, where each entry is drawn independently from a normal distribution N(0, σ<sup>2</sup>), we use
-                </p>
-                <p style="text-align:center;">
-                    <img src="./Fourier Feature Networks_files/gamma.png" height="30px" class="center">
-                </p>
-                <p class="text-justify">
-                    to map input coordinates into a higher dimensional feature space before passing them through the network. 
-                </p>
-            </div>
-        </div>
-            
-
-
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <h3>
-                    Fourier features and the Neural Tangent Kernel
-                </h3>
-                <video id="v0" width="100%" autoplay="" loop="" muted="" controls="">
-                  <source src="img/test_sweep_1e-4_5000_more_low.mp4" type="video/mp4">
-                </video>
-                <p class="text-justify">
-                    Recent theoretical work describes the behavior of deep networks in terms of the <em>neural tangent kernel</em> (NTK), showing that the network's predictions over the course of training closely track the outputs of kernel regression problem being optimized by gradient descent. In our paper, we show that using a Fourier feature mapping transforms the NTK into a stationary kernel in our low-dimensional problem domains. In this context, the bandwidth of the NTK limits the spectrum of the recovered function. 
-                </p>
-                <p class="text-justify">
-                    In the video above, we show how scaling the Fourier feature frequencies provides direct control over the width of the NTK. This allows us to traverse a regime from underfitting (low scale, recovered function too low frequency) to overfitting (high scale, recovered function too high frequency), with the best generalization performance in the middle. Note that each image shown is the output of a different trained MLP network. The networks are supervised on a subsampled 256 x 256 image and tested at the full 512 x 512 resolution.
-                </p>
-            </div>
-        </div>
-
-
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <h3>
-                    Related links
-                </h3>
-                <p class="text-justify">
-                    Random Fourier features were first proposed in the seminal work of <a href="https://people.eecs.berkeley.edu/~brecht/papers/07.rah.rec.nips.pdf">Rahimi &amp; Recht (2007)</a>.
-                </p>
-                <p class="text-justify">
-                    The neural tangent kernel was introduced in <a href="https://arxiv.org/abs/1806.07572">Jacot et al. (2018)</a>. 
-                </p>
-                <p class="text-justify">
-                    We relied on the excellent open source projects <a href="https://github.com/google/jax">JAX</a> and <a href="https://github.com/google/neural-tangents">Neural Tangents</a> for training networks and calculating neural tangent kernels.
-                </p>
-                <p class="text-justify">
-                    In own previous work on <em>neural radiance fields</em> (<a href="https://www.matthewtancik.com/nerf">NeRF</a>), we were surprised to find that a "positional encoding" of input coordinates helped networks learn significantly higher frequency details, inspiring our exploration in this project.
-                </p>
-                <p class="text-justify">
-                    <a href="https://vsitzmann.github.io/siren/">Sitzmann et al. (2020)</a> concurrently introduced <em>sinusoidal representation networks</em> (SIREN), demonstrating exciting progress in coordinate based MLP representations by using a sine function as the nonlinearity between <em>all</em> layers in the network. This allows the MLPs to accurately represent first and second order derivatives of low dimensional signals. 
-                </p>
-                <p class="text-justify">
-                    You can find code to replicate all our experiments on <a href="https://github.com/tancik/fourier-feature-networks">GitHub</a>, but if you just want to try experimenting with the images used on this webpage you can find the uncompressed originals here: 
-                    <a href="https://bmild.github.io/fourfeat/img/lion_orig.png">Lion</a>,
-                    <a href="https://bmild.github.io/fourfeat/img/greece_orig.png">Greece</a>,
-                    <a href="https://bmild.github.io/fourfeat/img/fox_orig.png">Fox</a>.
-                </p>
-            </div>
-        </div>
-        
-
-<!--         <div class="row" id="header_img">
-            <figure class="col-md-8 col-md-offset-2">
-                <image src="img/llff_teaser.png" class="img-responsive" alt="overview">
-                <figcaption>
-                </figcaption>
-            </figure>
-                
-        </div> -->
-            
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <h3>
-                    Citation
-                </h3>
-                <div class="form-group col-md-10 col-md-offset-1">
-                    <textarea id="bibtex" class="form-control" readonly="" style="display: none;">@article{tancik2020fourfeat,
-    title={Fourier Features Let Networks Learn High Frequency Functions in Low Dimensional Domains},
-    author={Matthew Tancik and Pratul P. Srinivasan and Ben Mildenhall and Sara Fridovich-Keil and Nithin Raghavan and Utkarsh Singhal and Ravi Ramamoorthi and Jonathan T. Barron and Ren Ng},
-    journal={NeurIPS},
-    year={2020}
-}</textarea><div class="CodeMirror cm-s-default CodeMirror-wrap"><div style="overflow: hidden; position: relative; width: 3px; height: 0px; top: 4px; left: 4px;"><textarea autocorrect="off" autocapitalize="off" spellcheck="false" style="position: absolute; padding: 0px; width: 1000px; height: 1em; outline: none;" tabindex="0"></textarea></div><div class="CodeMirror-vscrollbar" cm-not-content="true" style="min-width: 18px;"><div style="min-width: 1px; height: 0px;"></div></div><div class="CodeMirror-hscrollbar" cm-not-content="true" style="min-height: 18px;"><div style="height: 100%; min-height: 1px; width: 0px;"></div></div><div class="CodeMirror-scrollbar-filler" cm-not-content="true"></div><div class="CodeMirror-gutter-filler" cm-not-content="true"></div><div class="CodeMirror-scroll" tabindex="-1"><div class="CodeMirror-sizer" style="margin-left: 0px; margin-bottom: 0px; border-right-width: 30px; min-height: 162px; padding-right: 0px; padding-bottom: 0px;"><div style="position: relative; top: 0px;"><div class="CodeMirror-lines"><div style="position: relative; outline: none;"><div class="CodeMirror-measure">AخA</div><div class="CodeMirror-measure"></div><div style="position: relative; z-index: 1;"></div><div class="CodeMirror-cursors"><div class="CodeMirror-cursor" style="left: 4px; top: 0px; height: 17.1406px;">&nbsp;</div></div><div class="CodeMirror-code" style=""><pre class=" CodeMirror-line "><span style="padding-right: 0.1px;">@article{tancik2020fourfeat,</span></pre><pre class=" CodeMirror-line "><span style="padding-right: 0.1px;"> &nbsp;  title={Fourier Features Let Networks Learn High Frequency Functions in Low Dimensional Domains},</span></pre><pre class=" CodeMirror-line "><span style="padding-right: 0.1px;"> &nbsp;  author={Matthew Tancik and Pratul P. Srinivasan and Ben Mildenhall and Sara Fridovich-Keil and Nithin Raghavan and Utkarsh Singhal and Ravi Ramamoorthi and Jonathan T. Barron and Ren Ng},</span></pre><pre class=" CodeMirror-line "><span style="padding-right: 0.1px;"> &nbsp;  journal={NeurIPS},</span></pre><pre class=" CodeMirror-line "><span style="padding-right: 0.1px;"> &nbsp;  year={2020}</span></pre><pre class=" CodeMirror-line "><span style="padding-right: 0.1px;">}</span></pre></div></div></div></div></div><div style="position: absolute; height: 30px; width: 1px; top: 162px;"></div><div class="CodeMirror-gutters" style="display: none; height: 192px;"></div></div></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <h3>
-                    Acknowledgements
-                </h3>
-                <p class="text-justify">
-                We thank Ben Recht for advice, and Cecilia Zhang, Tim Brooks, Jascha Sohl-Dickstein, Preetum Nakkiran, and Serena Wang for their comments on the text.
-                    <br>
-                BM is funded by a Hertz Foundation Fellowship and acknowledges support from the Google BAIR Commons program. 
-                MT, PS, and SFK are funded by NSF Graduate Fellowships.
-                RR was supported in part by ONR grants N000141712687 and
-                N000142012529 and the Ronald L. Graham Chair.
-                RN was supported in part by an FHL Vive Center Seed Grant.
-                Google University Relations provided a generous donation of compute credits.
-                    <br>
-                The website template was borrowed from <a href="http://mgharbi.com/">Michaël Gharbi</a>.
-                </p>
-            </div>
-        </div>
+          <div class="container">
+            <nav_justify>
+            <a href="https://github.com/somepago/dbViz">[Code]</a>
+            <a href="https://openaccess.thecvf.com/content/CVPR2022/papers/Somepalli_Can_Neural_Nets_Learn_the_Same_Model_Twice_Investigating_Reproducibility_CVPR_2022_paper.pdf">[Paper]</a>
+            <a href="https://www.youtube.com/watch?v=">[Video]</a>
+            </nav_justify>
+          </div>
     </div>
 
-</article>
-<div id="forest-ext-shadow-host"></div>
-<!-- </body> -->
-<grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration></html>
+</div>
+  <!--more-->
+
+  <p><img src="/projects/db_repro_allmodels.jpg" alt="HTML5 Icon" style="float:left;margin-right:2em;margin-bottom:2em;"></p>
+
+  <div align="center">
+    <h2>Abstract</h2>
+  </div>
+
+
+<p>
+  We discuss methods for visualizing neural network decision boundaries and decision regions. 
+  We use these visualizations to investigate issues related to reproducibility and generalization in neural network training. 
+  We observe that changes in model architecture (and its associate inductive bias) cause visible changes in decision boundaries,
+   while multiple runs with the same architecture yield results with strong similarities, 
+  especially in the case of wide architectures. We also use decision boundary methods to visualize double descent phenomena. 
+  We see that decision boundary reproducibility depends strongly on model width. Near the threshold of interpolation, 
+  neural network decision boundaries become fragmented into many small decision regions, and these regions are non-reproducible.
+   Meanwhile, very narrows and very wide networks have high levels of reproducibility in their decision boundaries with relatively few decision regions. 
+   We discuss how our observations relate to the theory of double descent phenomena in convex models.
+</p>
+
+<div align="center">
+  <h2>Cite us</h2>
+</div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+  @inproceedings{somepalli2022can,
+    title={Can Neural Nets Learn the Same Model Twice? Investigating Reproducibility and Double Descent from the Decision Boundary Perspective},
+    author={Somepalli, Gowthami and Fowl, Liam and Bansal, Arpit and Yeh-Chiang, Ping and Dar, Yehuda and Baraniuk, Richard and Goldblum, Micah and Goldstein, Tom},
+    booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+    pages={13699--13708},
+    year={2022}
+  }
+</code></pre></div></div>
+
+<div align="center"> <p class="date">
+    Last updated July 18, 2022
+  </p>
+</article></div>
+
+<!-- <div class="pagination">
+  
+    <a href="/blog/finishing/" class="button button-previous">Finishing</a>
+  
+
+  
+    <span class="button button-disabled button-next">No newer posts</span>
+  
+</div> -->
+
+
+        <footer>
+      <p>Copyright © 2022 Gowthami Somepalli. All Rights Reserved.</p>
+    </footer>
+    <!-- [if !IE]><script>fixScale(document);</script> -->
+    <!--<![endif]
+    <script type="text/javascript">
+      var headlines = document.getElementsByTagName('h2');
+
+      for (var i = 0; i < headlines.length; i++) {
+        var headline = headlines[i];
+        headline.innerHTML = '<span>' + headline.innerHTML + '</span>';
+      }
+
+      var _gauges = _gauges || [];
+      (function() {
+        var t   = document.createElement('script');
+        t.type  = 'text/javascript';
+        t.async = true;
+        t.id    = 'gauges-tracker';
+        t.setAttribute('data-site-id', '4d58af2e0184f6792e000003');
+        t.src = '//secure.gaug.es/track.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(t, s);
+      })();
+    </script>
+    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+  </div>
+
+		<script type="text/javascript">
+      window.addEventListener("load", function fly_performance_report(event){
+        setTimeout(function(){
+          var sMatch = (' '+document.cookie).match(new RegExp('[; ]flyio_request_id=([^\\s;]*)'));
+          var originalRequestId = sMatch ? unescape(sMatch[1]) : false;
+          if (!originalRequestId) return
+
+          var req = new window.XMLHttpRequest
+          req.open('POST', "/__fly/middleware/render-performance/", true);
+          req.setRequestHeader('Content-Type', 'application/json');
+          req.setRequestHeader('Original-Request-Id', originalRequestId);
+          req.setRequestHeader('Original-Method', 'GET');
+          req.setRequestHeader('Original-Uri', 'https://orderedlist.com/blog/designing-in-the-build/');
+          req.send(JSON.stringify(performance.timing));
+        }, 0);
+      },false);
+    </script>
+
+<iframe scrolling="no" frameborder="0" allowtransparency="true" src="https://platform.twitter.com/widgets/widget_iframe.d7fc2fc075c61f6fa34d79a0cbbf1e34.html?origin=https%3A%2F%2Forderedlist.com" title="Twitter settings iframe" style="display: none;"></iframe><iframe id="rufous-sandbox" scrolling="no" frameborder="0" allowtransparency="true" allowfullscreen="true" style="position: absolute; visibility: hidden; display: none; width: 0px; height: 0px; padding: 0px; border: none;" title="Twitter analytics iframe"></iframe></body></html>
