@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="Extracting style from the images.">
+  <meta name="keywords" content="CSD, ContraStyles">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Measuring Style Similarity in Diffusion Models  </title>
+
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon-32x32.png">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <a class="navbar-item" href="https://somepago.github.io">
+      <span class="icon">
+          <i class="fas fa-home"></i>
+      </span>
+      </a>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          Related Research
+        </a>
+        <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://somepago.github.io/diffrep.html">
+            Diffusion Memorization
+          </a>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Measuring Style Similarity in Diffusion Models          </h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://somepago.github.io">Gowthami Somepalli*</a><sup>1</sup>,</span>
+              <span class="author-block">
+                <a href="">Anubhav Gupta*</a><sup>1</sup>,</span>
+                <span class="author-block">
+                  <a href="">Kamal Gupta</a><sup>1</sup>,</span>
+                  <span class="author-block">
+                    <a href="">Shramay Palta</a><sup>1</sup>,</span>
+                  <span class="author-block">
+                    <a href="">Micah Goldblum</a><sup>3</sup>,</span>
+                  <span class="author-block">
+                    <a href="">Jonas Geiping</a><sup>2</sup>,</span>
+                  <span class="author-block">
+                    <a href="">Abhinav Shrivastava</a><sup>1</sup>,</span>
+                  <span class="author-block">
+                    <a href="">Tom Goldstein</a><sup>1</sup></span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>University of Maryland,</span>
+            <span class="author-block"><sup>2</sup>ELLIS, MPI-IS,</span>
+            <span class="author-block"><sup>3</sup>Columbia University</span>
+            <span class="author-block"><sup>*</sup>Equal Contribution</span>
+          </div>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"> <font color="#ff006e"> ECCV 2024 </font> </span>
+            
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2404.01292"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- Video Link. -->
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-youtube"></i>
+                  </span>
+                  <span>Video(Soon)</span>
+                </a>
+              </span>
+              <!-- Code Link. -->
+              <span class="link-block">
+                <a href="https://github.com/learn2phoenix/CSD"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+              <!-- Dataset Link. -->
+              <span class="link-block">
+                <a href="https://huggingface.co/datasets/tomg-group-umd/ContraStyles"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="far fa-images"></i>
+                  </span>
+                  <span>Dataset</span>
+                  </a>
+            <!-- Slides Link. -->
+            <span class="link-block">
+              <a href="https://drive.google.com/file/d/11w_ERLNYaQuMLfCZGmCNm2Yrg9iKpyaZ/view?usp=sharing"
+                  class="external-link button is-normal is-rounded is-dark">
+                <span class="icon">
+                    <!-- <i class="fab fa-person-chalkboard"></i> -->
+                    <i class="fas fa-file-powerpoint"></i>
+                </span>
+                <span>Slides</span>
+                </a>
+            </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <img src="/static/projects/csd/csd_teaser.png" alt="Contrastive Style Descriptors teaser">
+      <h2 class="subtitle has-text-centered">
+        Original artwork of 6 popular artists and the images generated in the style of these artists by three
+popular text-to-image generative models. The numbers displayed below each image indicates the similarity of
+generated image with artist’s style using proposed method. A high similarity score suggests a strong presence of
+the artist’s style elements in the generated image. Based on our analyses, we postulate that three artists on the
+right were removed (or unlearned) from SD 2.1 while they were present in MidJourney and SD 1.4.
+      </h2>
+    </div>
+  </div>
+</section>
+
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Generative models are now widely used by graphic designers and artists. Prior works have shown that these models remember and often replicate content from their training data during generation. Hence as their proliferation increases, it has become important to perform a database search to determine whether the properties of the image are attributable to specific training data, every time before a generated image is used for professional purposes. Existing tools for this purpose focus on retrieving images of similar semantic content. Meanwhile, many artists are concerned with style replication in text-to-image models. We present a framework for understanding and extracting style descriptors from images. Our framework comprises a new dataset curated using the insight that style is a subjective property of an image that captures complex yet meaningful interactions of factors including but not limited to colors, textures, shapes, etc. We also propose a method to extract style descriptors that can be used to attribute style of a generated image to the images used in the training dataset of a text-to-image model. We showcase promising results in various style retrieval tasks. We also quantitatively and qualitatively analyze style attribution and matching in the Stable Diffusion model. 
+
+          </p>
+        </div>
+      </div>
+    </div>
+    <!--/ Abstract. -->
+
+   
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>
+      @article{somepalli2024measuring,
+        title={Measuring Style Similarity in Diffusion Models},
+        author={Somepalli, Gowthami and Gupta, Anubhav and Gupta, Kamal and Palta, Shramay and Goldblum, Micah and Geiping, Jonas and Shrivastava, Abhinav and Goldstein, Tom},
+        journal={arXiv preprint arXiv:2404.01292},
+        year={2024}
+      }
+</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <span class="link-block">
+        <a href="https://arxiv.org/abs/2404.01292"
+           class="external-link button is-normal is-rounded is-dark">
+          <span class="icon">
+              <i class="ai ai-arxiv"></i>
+          </span>
+          <span>arXiv</span>
+        </a>
+      </span>
+      <!-- Video Link. -->
+      <!-- <span class="link-block">
+        <a href="https://www.youtube.com/watch?v=MrKrnHhk8IA"
+           class="external-link button is-normal is-rounded is-dark">
+          <span class="icon">
+              <i class="fab fa-youtube"></i>
+          </span>
+          <span>Video</span>
+        </a>
+      </span> -->
+      <!-- Code Link. -->
+      <span class="link-block">
+        <a href="https://github.com/learn2phoenix/CSD"
+           class="external-link button is-normal is-rounded is-dark">
+          <span class="icon">
+              <i class="fab fa-github"></i>
+          </span>
+          <span>Code</span>
+          </a>
+      </span>
+      <!-- Dataset Link. -->
+      <span class="link-block">
+        <a href="https://huggingface.co/datasets/tomg-group-umd/ContraStyles"
+           class="external-link button is-normal is-rounded is-dark">
+          <span class="icon">
+              <i class="far fa-images"></i>
+          </span>
+          <span>Dataset</span>
+          </a>
+    <!-- Slides Link. -->
+    <span class="link-block">
+      <a href=""
+          class="external-link button is-normal is-rounded is-dark">
+        <span class="icon">
+            <i class="fab fa-github"></i>
+        </span>
+        <span>Slides</span>
+        </a>
+    </span>
+    </div>
+
+    
+    <div class="columns is-centered">
+      <div class="column is-4">
+        <div class="content">
+            Template borrowed from awesome <a
+            href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> website.
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
