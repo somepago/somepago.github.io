@@ -217,6 +217,19 @@
             margin-top: 0.3rem;
         }
 
+        .paper-links {
+            display: block;
+            margin-top: 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        .paper-links a {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .paper-links a:hover { color: var(--link); }
+
         .more-papers { margin-top: 1rem; }
 
         .more-papers a {
@@ -226,6 +239,50 @@
         }
 
         .more-papers a:hover { color: var(--link); }
+
+        /* Featured posts */
+        .post-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .post-card {
+            display: block;
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            text-decoration: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .post-card:hover {
+            border-color: var(--text-muted);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .post-tag {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .post-card h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text);
+            margin: 0.5rem 0;
+            line-height: 1.4;
+        }
+
+        .post-card p {
+            font-family: var(--font-serif);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
 
         /* News */
         .news ul { list-style: none; }
@@ -271,7 +328,7 @@
 
             .links { justify-content: center; }
             .portrait { width: 120px; height: 120px; }
-            .visual-grid { grid-template-columns: 1fr; }
+            .post-grid { grid-template-columns: 1fr; }
 
             .paper { flex-direction: column; gap: 0.3rem; }
             .paper .year { width: auto; }
@@ -343,25 +400,19 @@
                 </p>
             </section>
 
-            <section class="visual-work">
-                <h2>// selected visuals</h2>
-                <div class="visual-grid">
-                    <figure>
-                        <img src="projects/csd.png" alt="Style similarity in diffusion models">
-                        <figcaption>Measuring style similarity in diffusion models <span class="venue">ECCV'24</span></figcaption>
-                    </figure>
-                    <figure>
-                        <img src="projects/repl_diff.png" alt="Diffusion replication study">
-                        <figcaption>When AI copies: training data replication <span class="venue">CVPR'23</span></figcaption>
-                    </figure>
-                    <figure>
-                        <img src="projects/db.png" alt="Decision boundary visualization">
-                        <figcaption>Visualizing neural network decision boundaries <span class="venue">CVPR'22 Oral</span></figcaption>
-                    </figure>
-                    <figure>
-                        <img src="projects/cinepile.png" alt="CinePile benchmark">
-                        <figcaption>CinePile: long video understanding <span class="venue">Best Paper @ Synth4CV</span></figcaption>
-                    </figure>
+            <section class="featured-posts">
+                <h2>// featured writing</h2>
+                <div class="post-grid">
+                    <a href="blog.html" class="post-card">
+                        <span class="post-tag">coming soon</span>
+                        <h3>Why Diffusion Models Memorize</h3>
+                        <p>Three papers later, here's what I've learned about copying in generative models.</p>
+                    </a>
+                    <a href="blog.html" class="post-card">
+                        <span class="post-tag">coming soon</span>
+                        <h3>The Video-LLM Landscape</h3>
+                        <p>A survey of where video understanding stands today.</p>
+                    </a>
                 </div>
             </section>
 
@@ -373,6 +424,7 @@
                     <div class="paper-content">
                         <a href="files/CALVIN_Neurips.pdf">Calvin: Improved Contextual Video Captioning via Instruction Tuning</a>
                         <span class="venue">NeurIPS</span>
+                        <span class="paper-links"><a href="files/CALVIN_Neurips.pdf">paper</a></span>
                     </div>
                 </article>
 
@@ -381,14 +433,16 @@
                     <div class="paper-content">
                         <a href="https://ruchitrawal.github.io/cinepile/">CinePile: A Long Video Question Answering Dataset and Benchmark</a>
                         <span class="venue">CVPR Workshop · Best Paper</span>
+                        <span class="paper-links"><a href="https://arxiv.org/abs/2405.08813">paper</a> · <a href="https://huggingface.co/datasets/tomg-group-umd/cinepile">dataset</a></span>
                     </div>
                 </article>
 
                 <article class="paper">
                     <span class="year">2024</span>
                     <div class="paper-content">
-                        <a href="https://arxiv.org/abs/2404.01292">Measuring Style Similarity in Diffusion Models</a>
+                        <a href="csd.html">Measuring Style Similarity in Diffusion Models</a>
                         <span class="venue">ECCV</span>
+                        <span class="paper-links"><a href="https://arxiv.org/abs/2404.01292">paper</a> · <a href="csd.html">project</a> · <a href="https://github.com/learn2phoenix/CSD">code</a></span>
                     </div>
                 </article>
 
@@ -397,38 +451,43 @@
                     <div class="paper-content">
                         <a href="https://arxiv.org/abs/2305.20086">Understanding and Mitigating Copying in Diffusion Models</a>
                         <span class="venue">NeurIPS</span>
+                        <span class="paper-links"><a href="https://arxiv.org/abs/2305.20086">paper</a> · <a href="https://github.com/somepago/DCR">code</a> · <a href="https://www.youtube.com/watch?v=lubcx0p_0ic">talk</a></span>
                     </div>
                 </article>
 
                 <article class="paper">
                     <span class="year">2023</span>
                     <div class="paper-content">
-                        <a href="https://arxiv.org/abs/2212.03860">Diffusion Art or Digital Forgery? Investigating Data Replication</a>
+                        <a href="diffrep.html">Diffusion Art or Digital Forgery? Investigating Data Replication</a>
                         <span class="venue">CVPR</span>
+                        <span class="paper-links"><a href="https://arxiv.org/abs/2212.03860">paper</a> · <a href="diffrep.html">project</a> · <a href="https://github.com/somepago/DCR">code</a> · <a href="https://techcrunch.com/2022/12/13/image-generating-ai-can-copy-and-paste-from-training-data-raising-ip-concerns/">press</a></span>
                     </div>
                 </article>
 
                 <article class="paper">
                     <span class="year">2022</span>
                     <div class="paper-content">
-                        <a href="https://openaccess.thecvf.com/content/CVPR2022/papers/Somepalli_Can_Neural_Nets_Learn_the_Same_Model_Twice_Investigating_Reproducibility_CVPR_2022_paper.pdf">Can Neural Nets Learn the Same Model Twice?</a>
+                        <a href="dbviz.html">Can Neural Nets Learn the Same Model Twice?</a>
                         <span class="venue">CVPR · Oral</span>
+                        <span class="paper-links"><a href="https://openaccess.thecvf.com/content/CVPR2022/papers/Somepalli_Can_Neural_Nets_Learn_the_Same_Model_Twice_Investigating_Reproducibility_CVPR_2022_paper.pdf">paper</a> · <a href="dbviz.html">project</a> · <a href="https://github.com/somepago/dbViz">code</a> · <a href="https://www.youtube.com/watch?v=r50DRLLD-po">video</a></span>
                     </div>
                 </article>
 
                 <article class="paper">
                     <span class="year">2022</span>
                     <div class="paper-content">
-                        <a href="https://openreview.net/pdf?id=FiyUTAy4sB8">SAINT: Neural Networks for Tabular Data</a>
+                        <a href="saint.html">SAINT: Neural Networks for Tabular Data</a>
                         <span class="venue">NeurIPS TRLW</span>
+                        <span class="paper-links"><a href="https://openreview.net/pdf?id=FiyUTAy4sB8">paper</a> · <a href="saint.html">project</a> · <a href="https://github.com/somepago/saint">code</a></span>
                     </div>
                 </article>
 
                 <article class="paper">
                     <span class="year">2021</span>
                     <div class="paper-content">
-                        <a href="https://proceedings.neurips.cc/paper/2021/hash/dac32839a9f0baae954b41abee610cc0-Abstract.html">PatchGame: Learning to Signal Mid-level Patches</a>
+                        <a href="https://kampta.github.io/patch-game/">PatchGame: Learning to Signal Mid-level Patches</a>
                         <span class="venue">NeurIPS</span>
+                        <span class="paper-links"><a href="https://proceedings.neurips.cc/paper/2021/hash/dac32839a9f0baae954b41abee610cc0-Abstract.html">paper</a> · <a href="https://github.com/kampta/PatchGame">code</a> · <a href="https://papertalk.org/papertalks/37423">video</a></span>
                     </div>
                 </article>
 
