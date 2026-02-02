@@ -1,0 +1,384 @@
+/*
+ * Typewriter-style personal website
+ * Minimal, clean, with visual accents
+ */
+
+:root {
+    --bg: #faf9f7;
+    --text: #2c2c2c;
+    --text-muted: #666;
+    --accent: #1a1a1a;
+    --link: #0066cc;
+    --link-hover: #004499;
+    --border: #e0e0e0;
+    --code-bg: #f4f4f4;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    --font-serif: 'Georgia', 'Times New Roman', serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 17px;
+}
+
+body {
+    font-family: var(--font-mono);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 750px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+}
+
+/* Navigation */
+nav {
+    margin-bottom: 3rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-right: 2rem;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+nav a:hover,
+nav a.active {
+    color: var(--text);
+}
+
+nav a.active::before {
+    content: '> ';
+}
+
+/* Header */
+header {
+    margin-bottom: 3rem;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.intro {
+    flex: 1;
+}
+
+h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.tagline {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+}
+
+.cursor {
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+
+.links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+}
+
+.links a:hover {
+    color: var(--link);
+}
+
+.links a::before {
+    content: '[';
+}
+
+.links a::after {
+    content: ']';
+}
+
+.portrait-container {
+    flex-shrink: 0;
+}
+
+.portrait {
+    width: 140px;
+    height: 140px;
+    border-radius: 4px;
+    object-fit: cover;
+    filter: grayscale(20%);
+    transition: filter 0.3s;
+}
+
+.portrait:hover {
+    filter: grayscale(0%);
+}
+
+/* Main sections */
+main section {
+    margin-bottom: 3rem;
+}
+
+h2 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    letter-spacing: 1px;
+}
+
+/* About */
+.about p {
+    margin-bottom: 1rem;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+}
+
+.about a {
+    color: var(--link);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.about a:hover {
+    border-bottom-color: var(--link);
+}
+
+.contact {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+}
+
+.email {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    background: var(--code-bg);
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+}
+
+/* Visual work grid */
+.visual-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.visual-grid figure {
+    margin: 0;
+}
+
+.visual-grid img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.visual-grid img:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.visual-grid figcaption {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    line-height: 1.4;
+}
+
+.visual-grid .venue {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text);
+    font-weight: 500;
+    margin-top: 0.2rem;
+}
+
+/* Papers */
+.paper {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dotted var(--border);
+}
+
+.paper .year {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    width: 50px;
+}
+
+.paper-content {
+    flex: 1;
+}
+
+.paper-content a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    transition: color 0.2s;
+}
+
+.paper-content a:hover {
+    color: var(--link);
+}
+
+.paper-content .venue {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+}
+
+.more-papers {
+    margin-top: 1rem;
+}
+
+.more-papers a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.more-papers a:hover {
+    color: var(--link);
+}
+
+/* News */
+.news ul {
+    list-style: none;
+}
+
+.news li {
+    margin-bottom: 0.7rem;
+    font-size: 0.9rem;
+}
+
+.news .date {
+    color: var(--text-muted);
+    margin-right: 1rem;
+    font-size: 0.85rem;
+}
+
+.news a {
+    color: var(--link);
+    text-decoration: none;
+}
+
+/* Footer */
+footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+footer p {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    html {
+        font-size: 15px;
+    }
+
+    .container {
+        padding: 2rem 1.5rem;
+    }
+
+    .header-content {
+        flex-direction: column-reverse;
+        align-items: center;
+        text-align: center;
+    }
+
+    .links {
+        justify-content: center;
+    }
+
+    .portrait {
+        width: 120px;
+        height: 120px;
+    }
+
+    .visual-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .paper {
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .paper .year {
+        width: auto;
+    }
+
+    nav a {
+        margin-right: 1rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #1a1a1a;
+        --text: #e0e0e0;
+        --text-muted: #999;
+        --accent: #fff;
+        --link: #6db3f2;
+        --link-hover: #8fc5f7;
+        --border: #333;
+        --code-bg: #252525;
+    }
+
+    .portrait {
+        filter: grayscale(30%);
+    }
+
+    .portrait:hover {
+        filter: grayscale(10%);
+    }
+
+    .visual-grid img {
+        border-color: var(--border);
+    }
+}

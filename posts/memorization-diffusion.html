@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Diffusion Models Memorize · Gowthami Somepalli</title>
+    <link rel="icon" href="../favicons/favicon.ico">
+    <style>
+        :root {
+            --bg: #faf9f7;
+            --text: #2c2c2c;
+            --text-muted: #666;
+            --link: #0066cc;
+            --border: #e0e0e0;
+            --code-bg: #f4f4f4;
+            --font-mono: 'IBM Plex Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            --font-serif: 'Georgia', 'Times New Roman', serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 17px; }
+
+        body {
+            font-family: var(--font-mono);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        nav {
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-right: 2rem;
+            font-size: 0.9rem;
+        }
+
+        nav a:hover { color: var(--text); }
+
+        .back-link {
+            display: inline-block;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .back-link:hover { color: var(--link); }
+
+        .post-header h1 {
+            font-size: 1.6rem;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+        }
+
+        .post-meta {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .post-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--code-bg);
+            border-radius: 3px;
+            color: var(--text-muted);
+        }
+
+        /* Post content */
+        .post-content {
+            font-family: var(--font-serif);
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .post-content p { margin-bottom: 1.5rem; }
+
+        .post-content .lead {
+            font-size: 1.15rem;
+            border-left: 3px solid var(--border);
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .post-content h2 {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .post-content h3 {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .post-content a {
+            color: var(--link);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+        }
+
+        .post-content a:hover { border-bottom-color: var(--link); }
+
+        .post-content ul, .post-content ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        .post-content li { margin-bottom: 0.5rem; }
+
+        /* Code blocks */
+        .post-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .post-content code {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .post-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        /* Images */
+        .post-content figure {
+            margin: 2rem 0;
+        }
+
+        .post-content figure img {
+            width: 100%;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .post-content figcaption {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.75rem;
+            line-height: 1.5;
+        }
+
+        /* Side by side images */
+        .image-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .image-row img {
+            width: 100%;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .image-row figcaption {
+            grid-column: 1 / -1;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Blockquotes */
+        .post-content blockquote {
+            border-left: 3px solid var(--border);
+            padding-left: 1.5rem;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        footer p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 600px) {
+            html { font-size: 15px; }
+            .container { padding: 2rem 1.5rem; }
+            .post-header h1 { font-size: 1.3rem; }
+            .post-content pre { padding: 1rem; font-size: 0.8rem; }
+            .image-row { grid-template-columns: 1fr; }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #1a1a1a;
+                --text: #e0e0e0;
+                --text-muted: #999;
+                --link: #6db3f2;
+                --border: #333;
+                --code-bg: #252525;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="../index.html">home</a>
+            <a href="../blog.html">blog</a>
+            <a href="../files/Gowthami_CV.pdf">cv</a>
+        </nav>
+
+        <article>
+            <header class="post-header">
+                <a href="../blog.html" class="back-link">← back to blog</a>
+                <h1>Why Diffusion Models Memorize: A Deep Dive</h1>
+                <div class="post-meta">
+                    <time>January 2025</time> · 8 min read
+                </div>
+                <div class="post-tags">
+                    <span class="tag">diffusion</span>
+                    <span class="tag">my paper</span>
+                    <span class="tag">memorization</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p class="lead">
+                    After publishing three papers on memorization in diffusion models, I wanted to write
+                    a unified explainer of what we've learned. This post summarizes our findings and
+                    provides practical takeaways.
+                </p>
+
+                <h2>The Discovery</h2>
+
+                <p>
+                    In late 2022, we made a surprising discovery: Stable Diffusion—trained on billions
+                    of images—could sometimes generate near-exact copies of its training data. This
+                    wasn't supposed to happen.
+                </p>
+
+                <figure>
+                    <img src="../projects/repl_diff.png" alt="Examples of replicated images">
+                    <figcaption>
+                        Examples of training images (left) and their near-copies generated by
+                        Stable Diffusion (right). From our CVPR 2023 paper.
+                    </figcaption>
+                </figure>
+
+                <h2>Why Does This Happen?</h2>
+
+                <p>
+                    Through extensive experiments, we identified several key factors:
+                </p>
+
+                <h3>1. Text Conditioning Matters Most</h3>
+
+                <p>
+                    The captions associated with images play a crucial role. When a unique caption
+                    is repeatedly paired with the same image, the model learns that association.
+                </p>
+
+                <pre><code>// Highly specific caption = memorization risk
+"A photo of John Doe at the 2019 Tech Conference,
+wearing a blue shirt, standing next to the main stage"
+
+// Generic caption = lower risk
+"A person at a conference"</code></pre>
+
+                <h3>2. Duplication in Training Data</h3>
+
+                <p>
+                    Images that appear multiple times in the training set are more likely to be
+                    memorized. The scale of duplication in web-scraped datasets is often underestimated.
+                </p>
+
+                <div class="image-row">
+                    <img src="../projects/dcr2.png" alt="Duplication analysis">
+                    <img src="../projects/csd.png" alt="Style analysis">
+                    <figcaption>Left: Duplication analysis. Right: Style similarity patterns.</figcaption>
+                </div>
+
+                <h2>Mitigation Strategies</h2>
+
+                <p>
+                    In our NeurIPS 2023 follow-up, we proposed several approaches:
+                </p>
+
+                <ul>
+                    <li><strong>Multiple captions per image:</strong> Training with diverse captions
+                    reduces the text-image binding that leads to memorization.</li>
+                    <li><strong>Deduplication:</strong> Removing duplicate images in the training set.</li>
+                    <li><strong>Early stopping:</strong> Training for fewer steps can reduce memorization.</li>
+                </ul>
+
+                <h2>Code Example</h2>
+
+                <p>Here's how to use our DCR metric to check for memorization:</p>
+
+                <pre><code>import torch
+from dcr import compute_dcr_score
+
+# Load your generated images and training set
+generated = load_images("generated/")
+training = load_images("training/")
+
+# Compute similarity scores
+scores = compute_dcr_score(generated, training)
+
+# Flag potential copies (threshold ~0.5)
+copies = scores > 0.5
+print(f"Found {copies.sum()} potential copies")</code></pre>
+
+                <blockquote>
+                    "The model isn't creative—it's a very sophisticated search engine over its training data."
+                </blockquote>
+
+                <h2>Related Papers</h2>
+
+                <ul>
+                    <li><a href="https://arxiv.org/abs/2212.03860">Diffusion Art or Digital Forgery?</a> — CVPR 2023</li>
+                    <li><a href="https://arxiv.org/abs/2305.20086">Understanding and Mitigating Copying</a> — NeurIPS 2023</li>
+                    <li><a href="https://arxiv.org/abs/2404.01292">Measuring Style Similarity</a> — ECCV 2024</li>
+                </ul>
+
+                <p>
+                    Questions? Reach out on <a href="https://twitter.com/gowthami_s">Twitter</a>.
+                </p>
+            </div>
+        </article>
+
+        <footer>
+            <p>© 2025</p>
+        </footer>
+    </div>
+</body>
+</html>

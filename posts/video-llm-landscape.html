@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Video-LLM Landscape in 2024 · Gowthami Somepalli</title>
+    <link rel="icon" href="../favicons/favicon.ico">
+    <style>
+        :root {
+            --bg: #faf9f7;
+            --text: #2c2c2c;
+            --text-muted: #666;
+            --link: #0066cc;
+            --border: #e0e0e0;
+            --code-bg: #f4f4f4;
+            --font-mono: 'IBM Plex Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            --font-serif: 'Georgia', 'Times New Roman', serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 17px; }
+
+        body {
+            font-family: var(--font-mono);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        nav {
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-right: 2rem;
+            font-size: 0.9rem;
+        }
+
+        nav a:hover { color: var(--text); }
+
+        .back-link {
+            display: inline-block;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .back-link:hover { color: var(--link); }
+
+        .post-header h1 {
+            font-size: 1.6rem;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+        }
+
+        .post-meta {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .post-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--code-bg);
+            border-radius: 3px;
+            color: var(--text-muted);
+        }
+
+        .post-content {
+            font-family: var(--font-serif);
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .post-content p { margin-bottom: 1.5rem; }
+
+        .post-content .lead {
+            font-size: 1.15rem;
+            border-left: 3px solid var(--border);
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .post-content h2 {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .post-content h3 {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .post-content a {
+            color: var(--link);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+        }
+
+        .post-content a:hover { border-bottom-color: var(--link); }
+
+        .post-content ul, .post-content ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        .post-content li { margin-bottom: 0.5rem; }
+
+        .post-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .post-content code {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .post-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .post-content figure {
+            margin: 2rem 0;
+        }
+
+        .post-content figure img {
+            width: 100%;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .post-content figcaption {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.75rem;
+            line-height: 1.5;
+        }
+
+        /* Comparison table */
+        .post-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .post-content th, .post-content td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .post-content th {
+            font-weight: 600;
+            background: var(--code-bg);
+        }
+
+        .post-content blockquote {
+            border-left: 3px solid var(--border);
+            padding-left: 1.5rem;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        footer p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 600px) {
+            html { font-size: 15px; }
+            .container { padding: 2rem 1.5rem; }
+            .post-header h1 { font-size: 1.3rem; }
+            .post-content pre { padding: 1rem; font-size: 0.8rem; }
+            .post-content table { font-size: 0.75rem; }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #1a1a1a;
+                --text: #e0e0e0;
+                --text-muted: #999;
+                --link: #6db3f2;
+                --border: #333;
+                --code-bg: #252525;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="../index.html">home</a>
+            <a href="../blog.html">blog</a>
+            <a href="../files/Gowthami_CV.pdf">cv</a>
+        </nav>
+
+        <article>
+            <header class="post-header">
+                <a href="../blog.html" class="back-link">← back to blog</a>
+                <h1>The Video-LLM Landscape in 2024</h1>
+                <div class="post-meta">
+                    <time>December 2024</time> · 10 min read
+                </div>
+                <div class="post-tags">
+                    <span class="tag">video</span>
+                    <span class="tag">survey</span>
+                    <span class="tag">LLM</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p class="lead">
+                    Video understanding has seen rapid progress with the rise of Video-LLMs.
+                    Here's a survey of where things stand—and where CinePile fits in.
+                </p>
+
+                <h2>The Current State</h2>
+
+                <p>
+                    2024 has been a breakout year for video understanding. We've seen models go from
+                    struggling with basic action recognition to answering complex questions about
+                    movie plots, character motivations, and temporal reasoning.
+                </p>
+
+                <figure>
+                    <img src="../projects/cinepile.png" alt="CinePile benchmark overview">
+                    <figcaption>
+                        CinePile benchmark: testing Video-LLMs on long-form video understanding.
+                    </figcaption>
+                </figure>
+
+                <h2>Key Challenges</h2>
+
+                <h3>1. Long-form Video Understanding</h3>
+
+                <p>
+                    Most Video-LLMs still struggle with videos longer than a few minutes. The
+                    computational cost of processing thousands of frames is prohibitive, and
+                    naive frame sampling loses crucial information.
+                </p>
+
+                <h3>2. Temporal Reasoning</h3>
+
+                <p>
+                    Understanding <em>when</em> things happen—and in what order—remains difficult.
+                    Models often give correct answers about what's in a video while failing to
+                    understand the sequence of events.
+                </p>
+
+                <h2>Benchmark Comparison</h2>
+
+                <table>
+                    <tr>
+                        <th>Benchmark</th>
+                        <th>Video Length</th>
+                        <th>QA Type</th>
+                        <th>Size</th>
+                    </tr>
+                    <tr>
+                        <td>ActivityNet-QA</td>
+                        <td>~3 min</td>
+                        <td>Descriptive</td>
+                        <td>58K</td>
+                    </tr>
+                    <tr>
+                        <td>MovieQA</td>
+                        <td>~4 min clips</td>
+                        <td>Plot-based</td>
+                        <td>15K</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CinePile</strong></td>
+                        <td><strong>Full movies</strong></td>
+                        <td><strong>Multi-aspect</strong></td>
+                        <td><strong>300K+</strong></td>
+                    </tr>
+                </table>
+
+                <h2>What Makes CinePile Different</h2>
+
+                <p>
+                    We built CinePile to address the gap in long-form video evaluation:
+                </p>
+
+                <ul>
+                    <li><strong>Real movie-length videos:</strong> Not short clips, but full films</li>
+                    <li><strong>Human-in-the-loop QA generation:</strong> LLM-generated, human-verified</li>
+                    <li><strong>Diverse question types:</strong> Character, plot, temporal, visual</li>
+                </ul>
+
+                <pre><code># Example CinePile question format
+{
+  "video_id": "movie_001",
+  "question": "Why does the protagonist decide to
+               return home in the third act?",
+  "options": [
+    "A) To confront their father",
+    "B) To save their sibling",
+    "C) To retrieve an important object",
+    "D) To attend a funeral"
+  ],
+  "answer": "B",
+  "reasoning": "The phone call scene at 1:42:30..."
+}</code></pre>
+
+                <h2>Where We're Headed</h2>
+
+                <p>
+                    The next frontier is moving from understanding to generation—models that can
+                    not only answer questions about videos but reason about hypotheticals,
+                    predict outcomes, and even generate coherent video continuations.
+                </p>
+
+                <blockquote>
+                    "Video is just images with a time dimension" — said no one who's actually
+                    worked on video understanding.
+                </blockquote>
+
+                <h2>Resources</h2>
+
+                <ul>
+                    <li><a href="https://ruchitrawal.github.io/cinepile/">CinePile Project Page</a></li>
+                    <li><a href="https://huggingface.co/datasets/tomg-group-umd/cinepile">Dataset on HuggingFace</a></li>
+                    <li><a href="https://arxiv.org/abs/2405.08813">Paper on arXiv</a></li>
+                </ul>
+            </div>
+        </article>
+
+        <footer>
+            <p>© 2025</p>
+        </footer>
+    </div>
+</body>
+</html>
