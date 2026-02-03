@@ -434,8 +434,34 @@ h2 {
     margin-top: 2rem;
 }
 
-.story-footer {
+.story-inspiration {
     margin-top: 3rem;
+    padding: 1.5rem;
+    background: var(--code-bg);
+    border-radius: 4px;
+}
+
+.story-inspiration h3 {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.story-inspiration p {
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.story-inspiration em {
+    color: var(--text);
+}
+
+.story-footer {
+    margin-top: 2rem;
     padding-top: 1rem;
     border-top: 1px dashed var(--border);
     font-size: 0.85rem;
