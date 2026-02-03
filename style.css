@@ -428,6 +428,12 @@ h2 {
     margin-bottom: 1.5rem;
 }
 
+.story-break {
+    text-align: center;
+    color: var(--text-muted);
+    margin: 2rem 0;
+}
+
 .story-end {
     text-align: center;
     color: var(--text-muted);
