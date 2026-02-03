@@ -364,6 +364,84 @@ h2 {
     margin-bottom: 0.25rem;
 }
 
+/* Stories */
+.stories-list { margin-top: 2rem; }
+
+.story-preview {
+    padding: 1.5rem 0;
+    border-bottom: 1px dotted var(--border);
+}
+
+.story-preview:first-child { padding-top: 0; }
+
+.story-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.story-preview h2 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0.4rem 0;
+    letter-spacing: 0;
+}
+
+.story-preview h2 a {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.story-preview h2 a:hover { color: var(--link); }
+
+.story-teaser {
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.story-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Story page */
+.story-header h1 {
+    font-size: 1.6rem;
+    margin-bottom: 0.75rem;
+}
+
+.story-meta {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 2rem;
+}
+
+.story-content {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.9;
+}
+
+.story-content p {
+    margin-bottom: 1.5rem;
+}
+
+.story-end {
+    text-align: center;
+    color: var(--text-muted);
+    margin-top: 2rem;
+}
+
+.story-footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
 /* Blog list */
 .blog-list { margin-top: 2rem; }
 
