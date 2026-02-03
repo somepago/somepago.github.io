@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Video-LLM Landscape in 2024 · Gowthami Somepalli</title>
+    <title>Another Sample Post · Gowthami Somepalli</title>
     <link rel="icon" href="../favicons/favicon.ico">
     <style>
         :root {
@@ -244,131 +244,109 @@
         <article>
             <header class="post-header">
                 <a href="../blog.html" class="back-link">← back to blog</a>
-                <h1>The Video-LLM Landscape in 2024</h1>
+                <h1>Another Sample Post with Tables</h1>
                 <div class="post-meta">
-                    <time>December 2024</time> · 10 min read
+                    <time>December 2024</time> · 7 min read
                 </div>
                 <div class="post-tags">
-                    <span class="tag">video</span>
-                    <span class="tag">survey</span>
-                    <span class="tag">LLM</span>
+                    <span class="tag">sample</span>
+                    <span class="tag">template</span>
                 </div>
             </header>
 
             <div class="post-content">
                 <p class="lead">
-                    Video understanding has seen rapid progress with the rise of Video-LLMs.
-                    Here's a survey of where things stand—and where CinePile fits in.
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. This template
+                    shows how to use tables and other formatting options.
                 </p>
 
-                <h2>The Current State</h2>
+                <h2>Introduction</h2>
 
                 <p>
-                    2024 has been a breakout year for video understanding. We've seen models go from
-                    struggling with basic action recognition to answering complex questions about
-                    movie plots, character motivations, and temporal reasoning.
+                    Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
+                    doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
+                    veritatis et quasi architecto beatae vitae dicta sunt explicabo.
                 </p>
 
                 <figure>
-                    <img src="../projects/cinepile.png" alt="CinePile benchmark overview">
+                    <img src="../projects/cinepile.png" alt="Placeholder">
                     <figcaption>
-                        CinePile benchmark: testing Video-LLMs on long-form video understanding.
+                        Figure 1: Description of the figure.
                     </figcaption>
                 </figure>
 
-                <h2>Key Challenges</h2>
-
-                <h3>1. Long-form Video Understanding</h3>
+                <h2>Comparison Table</h2>
 
                 <p>
-                    Most Video-LLMs still struggle with videos longer than a few minutes. The
-                    computational cost of processing thousands of frames is prohibitive, and
-                    naive frame sampling loses crucial information.
+                    Here's an example table for comparing methods or results:
                 </p>
-
-                <h3>2. Temporal Reasoning</h3>
-
-                <p>
-                    Understanding <em>when</em> things happen—and in what order—remains difficult.
-                    Models often give correct answers about what's in a video while failing to
-                    understand the sequence of events.
-                </p>
-
-                <h2>Benchmark Comparison</h2>
 
                 <table>
                     <tr>
-                        <th>Benchmark</th>
-                        <th>Video Length</th>
-                        <th>QA Type</th>
-                        <th>Size</th>
+                        <th>Method</th>
+                        <th>Metric A</th>
+                        <th>Metric B</th>
+                        <th>Notes</th>
                     </tr>
                     <tr>
-                        <td>ActivityNet-QA</td>
-                        <td>~3 min</td>
-                        <td>Descriptive</td>
-                        <td>58K</td>
+                        <td>Baseline</td>
+                        <td>72.3</td>
+                        <td>65.1</td>
+                        <td>Standard approach</td>
                     </tr>
                     <tr>
-                        <td>MovieQA</td>
-                        <td>~4 min clips</td>
-                        <td>Plot-based</td>
-                        <td>15K</td>
+                        <td>Method X</td>
+                        <td>78.5</td>
+                        <td>71.2</td>
+                        <td>+attention</td>
                     </tr>
                     <tr>
-                        <td><strong>CinePile</strong></td>
-                        <td><strong>Full movies</strong></td>
-                        <td><strong>Multi-aspect</strong></td>
-                        <td><strong>300K+</strong></td>
+                        <td><strong>Ours</strong></td>
+                        <td><strong>82.1</strong></td>
+                        <td><strong>76.8</strong></td>
+                        <td>Full model</td>
                     </tr>
                 </table>
 
-                <h2>What Makes CinePile Different</h2>
+                <h2>Numbered List</h2>
+
+                <ol>
+                    <li>First step in the process</li>
+                    <li>Second step with more details</li>
+                    <li>Third step to complete</li>
+                </ol>
+
+                <h2>Code Example</h2>
+
+                <pre><code># Configuration example
+config = {
+    "model": "your_model_name",
+    "batch_size": 32,
+    "learning_rate": 1e-4,
+    "epochs": 100
+}
+
+# Training loop placeholder
+for epoch in range(config["epochs"]):
+    train_one_epoch(model, data, config)
+    evaluate(model, val_data)</code></pre>
+
+                <h2>Conclusion</h2>
 
                 <p>
-                    We built CinePile to address the gap in long-form video evaluation:
-                </p>
-
-                <ul>
-                    <li><strong>Real movie-length videos:</strong> Not short clips, but full films</li>
-                    <li><strong>Human-in-the-loop QA generation:</strong> LLM-generated, human-verified</li>
-                    <li><strong>Diverse question types:</strong> Character, plot, temporal, visual</li>
-                </ul>
-
-                <pre><code># Example CinePile question format
-{
-  "video_id": "movie_001",
-  "question": "Why does the protagonist decide to
-               return home in the third act?",
-  "options": [
-    "A) To confront their father",
-    "B) To save their sibling",
-    "C) To retrieve an important object",
-    "D) To attend a funeral"
-  ],
-  "answer": "B",
-  "reasoning": "The phone call scene at 1:42:30..."
-}</code></pre>
-
-                <h2>Where We're Headed</h2>
-
-                <p>
-                    The next frontier is moving from understanding to generation—models that can
-                    not only answer questions about videos but reason about hypotheticals,
-                    predict outcomes, and even generate coherent video continuations.
+                    Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
+                    sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
                 </p>
 
                 <blockquote>
-                    "Video is just images with a time dimension" — said no one who's actually
-                    worked on video understanding.
+                    "A placeholder quote that you can replace with something meaningful."
                 </blockquote>
 
-                <h2>Resources</h2>
+                <h2>References</h2>
 
                 <ul>
-                    <li><a href="https://ruchitrawal.github.io/cinepile/">CinePile Project Page</a></li>
-                    <li><a href="https://huggingface.co/datasets/tomg-group-umd/cinepile">Dataset on HuggingFace</a></li>
-                    <li><a href="https://arxiv.org/abs/2405.08813">Paper on arXiv</a></li>
+                    <li><a href="#">Link to paper or resource</a></li>
+                    <li><a href="#">Another reference</a></li>
                 </ul>
             </div>
         </article>
