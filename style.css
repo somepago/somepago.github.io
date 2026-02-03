@@ -299,6 +299,61 @@ h2 {
     text-decoration: none;
 }
 
+/* Notes */
+.notes-list { margin-top: 2rem; }
+
+.note {
+    padding: 1.5rem 0;
+    border-bottom: 1px dotted var(--border);
+}
+
+.note:first-child { padding-top: 0; }
+
+.note-header {
+    margin-bottom: 0.75rem;
+}
+
+.note-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.note-header h2 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0.3rem 0;
+    letter-spacing: 0;
+    display: inline;
+}
+
+.note-link {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-left: 0.5rem;
+}
+
+.note-link:hover { color: var(--link); }
+
+.note-content {
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.note-content p {
+    margin-bottom: 0.5rem;
+}
+
+.note-content ul {
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+}
+
+.note-content li {
+    margin-bottom: 0.25rem;
+}
+
 /* Blog list */
 .blog-list { margin-top: 2rem; }
 
