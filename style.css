@@ -206,17 +206,19 @@ h2 {
 
 .paper-content a:hover { color: var(--link); }
 
-.paper-content .venue {
+.paper-meta {
     display: block;
-    font-size: 0.8rem;
-    color: var(--text-muted);
     margin-top: 0.3rem;
+    font-size: 0.8rem;
 }
 
-.paper-links {
-    display: block;
-    margin-top: 0.4rem;
-    font-size: 0.8rem;
+.paper-content .venue {
+    color: var(--text-muted);
+}
+
+.paper-links::before {
+    content: ' · ';
+    color: var(--text-muted);
 }
 
 .paper-links a {
