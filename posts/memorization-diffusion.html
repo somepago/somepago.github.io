@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="distill-post">
         <nav>
             <a href="../index.html">home</a>
             <a href="../blog.html">blog</a>
@@ -37,27 +37,51 @@
                     that summarizes the post.
                 </p>
 
-                <h2>Section Heading</h2>
+                <nav class="distill-toc">
+                    <h2>Contents</h2>
+                    <ol>
+                        <li><a href="#section-1">Section Heading</a></li>
+                        <li><a href="#section-2">Another Section</a></li>
+                        <li><a href="#section-3">Side-by-Side Images</a></li>
+                        <li><a href="#section-4">Blockquote Example</a></li>
+                        <li><a href="#references">References</a></li>
+                    </ol>
+                </nav>
+
+                <h2 id="section-1">Section Heading</h2>
 
                 <p>
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor,
                     nisl nec ultricies ultricies, nunc nisl aliquam nunc, vitae aliquam nisl
-                    nunc vitae nisl. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                    nunc vitae nisl.<span class="sidenote-ref"></span><span class="sidenote">This is a sidenote. It appears in the right margin on wide screens and collapses inline on mobile. Great for tangential details.</span> Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </p>
 
                 <figure>
                     <img src="../projects/db.png" alt="Placeholder image">
                     <figcaption>
-                        Figure 1: Caption describing the image goes here.
+                        Figure 1: A regular figure stays within the text column (680px).
                     </figcaption>
                 </figure>
 
-                <h2>Another Section</h2>
+                <h2 id="section-2">Another Section</h2>
 
                 <p>
                     Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-                    aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
+                    aliquip ex ea commodo consequat<a href="#ref-1" class="citation-ref">1</a>.
+                    Duis aute irure dolor in reprehenderit in
                     voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                </p>
+
+                <div class="info-box">
+                    <p><strong>Key Insight</strong></p>
+                    <p>
+                        This is an info box for highlighting important concepts, definitions,
+                        or takeaways. It uses a left border accent similar to Distill's callouts.
+                    </p>
+                </div>
+
+                <p>
+                    Here's an example of a margin note without a number.<span class="marginnote">Margin notes are like sidenotes but without the superscript counter. Use them for supplementary context.</span> The text continues normally while the note floats in the margin.
                 </p>
 
                 <h3>Subsection with Code</h3>
@@ -84,15 +108,22 @@ print(f"Result: {result}")</code></pre>
                     <li><strong>Third point:</strong> Sed do eiusmod tempor</li>
                 </ul>
 
-                <h2>Side-by-Side Images</h2>
+                <h2 id="section-3">Side-by-Side Images</h2>
 
-                <div class="image-row">
-                    <img src="../projects/csd.png" alt="Left image">
-                    <img src="../projects/repl_diff.png" alt="Right image">
-                    <figcaption>Figure 2: Left shows X. Right shows Y.</figcaption>
-                </div>
+                <p>
+                    A wide figure extends beyond the text column into the sidenote
+                    area<a href="#ref-2" class="citation-ref">2</a>, giving images more room to breathe:
+                </p>
 
-                <h2>Blockquote Example</h2>
+                <figure class="figure-wide">
+                    <div class="image-row">
+                        <img src="../projects/csd.png" alt="Left image">
+                        <img src="../projects/repl_diff.png" alt="Right image">
+                    </div>
+                    <figcaption>Figure 2: A wide figure that extends into the margin area. Left shows X. Right shows Y.</figcaption>
+                </figure>
+
+                <h2 id="section-4">Blockquote Example</h2>
 
                 <blockquote>
                     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. This is a quote
@@ -100,7 +131,7 @@ print(f"Result: {result}")</code></pre>
                 </blockquote>
 
                 <p>
-                    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+                    Excepteur sint occaecat cupidatat non proident<span class="sidenote-ref"></span><span class="sidenote">Another sidenote demonstrating that the counter auto-increments. Each note gets a sequential number.</span>, sunt in culpa qui officia
                     deserunt mollit anim id est laborum.
                 </p>
 
@@ -111,6 +142,24 @@ print(f"Result: {result}")</code></pre>
                     <li><a href="#">Code repository</a></li>
                     <li><a href="#">Related resource</a></li>
                 </ul>
+
+                <div class="references" id="references">
+                    <h2>References</h2>
+                    <ol>
+                        <li id="ref-1">
+                            Author A, Author B.
+                            <span class="ref-title">Title of the First Referenced Paper.</span>
+                            <span class="ref-venue">Conference on Example Research</span>, 2024.
+                            <a href="#">PDF</a> <a href="#">Code</a>
+                        </li>
+                        <li id="ref-2">
+                            Author C, Author D.
+                            <span class="ref-title">Title of the Second Referenced Paper.</span>
+                            <span class="ref-venue">Journal of Placeholder Studies</span>, 2023.
+                            <a href="#">PDF</a>
+                        </li>
+                    </ol>
+                </div>
             </div>
         </article>
 
