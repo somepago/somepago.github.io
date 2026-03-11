@@ -752,11 +752,11 @@ footer p {
 /* --- Sidenotes (numbered) --- */
 
 .sidenote-ref {
-    counter-increment: sidenote-counter;
     cursor: pointer;
 }
 
 .sidenote-ref::after {
+    counter-increment: sidenote-counter;
     content: counter(sidenote-counter);
     font-size: 0.6em;
     vertical-align: super;
