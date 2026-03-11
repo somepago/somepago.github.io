@@ -83,19 +83,19 @@
                 <p>
                     There are two models, both 6B parameters. <strong>Base</strong> runs at 50 steps with CFG=4, and <strong>Turbo</strong> (distilled) runs at 8 steps with no CFG. Architecturally it's a single-stream DiT (Figure 2) &mdash; conditioning and generation tokens self-attend to each other using shared projection layers throughout. Text conditioning comes from a <strong>Qwen3 language model</strong> (4B parameters), using the second-to-last hidden layer embeddings.<span class="sidenote-ref"></span><span class="sidenote">Important detail for later: the text conditioning model is a <em>pure language model</em> &mdash; it has no vision encoder, no image tokens, no visual understanding of any kind. It only sees text.</span>
                 </p>
-
-                <p>
-                    There's nothing too exotic about the architecture or loss functions. The magic is in their extensive data curation engines and data curriculum design &mdash; I'd attribute most of the model's quality to that. The rest comes from careful post-training: they performed <strong>distillation + RL in a single step</strong>, which is something of a first for training large-ish DiT models in the open-source world.
-                </p>
-
-                <p>
-                    One downside worth noting: I see noticeable <strong>diversity collapse in the Turbo model</strong>.<span class="marginnote">Even across different seeds, generations tend to converge on similar structures and color palettes. The RLHF fingerprint is <em>very</em> visible in the outputs.</span> They clearly invested enormous effort in reward model quality, but the tradeoff is strong aesthetic biases baked into the model.
-                </p>
-
                 <figure>
                     <img src="zimage-arch.png" alt="Z-Image architecture diagram showing the single-stream DiT with Qwen3 text encoder, attention blocks, and FFN blocks">
                     <figcaption>Figure 2: Z-Image architecture &mdash; a single-stream DiT where text and image tokens share the same attention and FFN layers throughout.</figcaption>
                 </figure>
+                <p>
+                    There's nothing too exotic about the architecture or loss functions. The magic is in their extensive data curation engines and data curriculum design &mdash; I'd attribute most of the model's quality to that. The rest comes from careful post-training: they performed <strong>distillation + RL in a single step</strong>, which is something of a first for training large-ish DiT models in the open-source world.
+                </p>
+
+                <!-- <p>
+                    One downside worth noting: I see noticeable <strong>diversity collapse in the Turbo model</strong>.<span class="marginnote">Even across different seeds, generations tend to converge on similar structures and color palettes. The RLHF fingerprint is <em>very</em> visible in the outputs.</span> They clearly invested enormous effort in reward model quality, but the tradeoff is strong aesthetic biases baked into the model.
+                </p> -->
+
+
 
                 <h2 id="emergent-i2i">Emergent Image-to-Image Behavior</h2>
 
@@ -164,12 +164,6 @@
                     <figcaption>Figure 5: Spliced QwenVL results across layers. Layers before L8 produce extreme artifacts (likely due to misaligned or malformed embeddings), but later layers yield clean, artifact-free variations. Compare with Figure 3 to see the difference the splice makes.</figcaption>
                 </figure>
 
-                <h3>"But Z-Image Has an Omni/Edit Model..."</h3>
-
-                <p>
-                    Yes &mdash; Z-Image trained an omni model with image understanding, and yes, they have editing capabilities. But those checkpoints aren't released. What you're looking at here is the <strong>text-to-image-only checkpoint</strong> doing image-to-image with zero training, zero fine-tuning, zero adapters.<span class="sidenote-ref"></span><span class="sidenote">The Turbo model has no SigLIP weights, no image conditioning pathway, nothing. It was trained purely to go from text&#8594;image.</span> The fact that it produces coherent, artifact-free image variations through nothing more than an inference-time weight splice is what makes this emergent behavior &mdash; not a feature the model was designed to have, but one that falls out of the architecture for free.
-                </p>
-
                 <h3>Why Does This Work?</h3>
 
                 <p>
@@ -229,6 +223,11 @@
                     All results shown here use <strong>zero additional training</strong>. This is purely architectural modification at inference time. The emergent behavior was always there &mdash; it just needed the right wiring to surface.
                 </p>
 
+                <h3>"But Z-Image Has an Omni/Edit Model..."</h3>
+
+                <p>
+                    Yes &mdash; Z-Image trained an omni model with image understanding, and yes, they have editing capabilities. But those checkpoints aren't released. What you're looking at here is the <strong>text-to-image-only checkpoint</strong> doing image-to-image with zero training, zero fine-tuning, zero adapters.<span class="sidenote-ref"></span><span class="sidenote">The Turbo model has no SigLIP weights, no image conditioning pathway, nothing. It was trained purely to go from text&#8594;image.</span> The fact that it produces coherent, artifact-free image variations through nothing more than an inference-time weight splice is what makes this emergent behavior &mdash; not a feature the model was designed to have, but one that falls out of the architecture for free.
+                </p>
                 <h2 id="whats-next">What's Next</h2>
 
                 <p>
