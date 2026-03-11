@@ -776,7 +776,6 @@ footer p {
     font-size: 0.75rem;
     color: var(--text-muted);
     line-height: 1.5;
-    counter-increment: sidenote-counter;
 }
 
 .sidenote::before {

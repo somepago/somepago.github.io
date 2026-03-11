@@ -59,13 +59,14 @@
                         <li><a href="#layer-by-layer">Layer-by-Layer: Faithful to Creative</a></li>
                         <li><a href="#misc">Misc Notes</a></li>
                         <li><a href="#whats-next">What's Next</a></li>
+                        <li><a href="#references">References</a></li>
                     </ol>
                 </nav>
 
                 <h2 id="why-zimage">Why Z-Image?</h2>
 
                 <p>
-                    Z-Image is an incredible image generation model that came out a few months ago. It's open-source, its 6B model is remarkably capable, and &mdash; this is the rare part &mdash; both the base and distilled versions are released. The science of studying the gap between these two is fascinating in its own right.
+                    Z-Image<a href="#ref-1" class="citation-ref">1</a> is an incredible image generation model that came out a few months ago. It's open-source, its 6B model is remarkably capable, and &mdash; this is the rare part &mdash; both the base and distilled versions are released. The science of studying the gap between these two is fascinating in its own right.
                 </p>
 
                 <p>
@@ -79,7 +80,7 @@
                 <h2 id="quick-intro">Z-Image &mdash; Quick Intro</h2>
 
                 <p>
-                    There are two models, both 6B parameters. <strong>Base</strong> runs at 50 steps with CFG=4, and <strong>Turbo</strong> (distilled) runs at 8 steps with no CFG. Architecturally it's a single-stream DiT &mdash; conditioning and generation tokens self-attend to each other using shared projection layers throughout. Text conditioning comes from a <strong>Qwen3 language model</strong> (4B parameters), using the second-to-last hidden layer embeddings.<span class="sidenote-ref"></span><span class="sidenote">Important detail for later: the text conditioning model is a <em>pure language model</em> &mdash; it has no vision encoder, no image tokens, no visual understanding of any kind. It only sees text.</span>
+                    There are two models, both 6B parameters. <strong>Base</strong> runs at 50 steps with CFG=4, and <strong>Turbo</strong> (distilled) runs at 8 steps with no CFG. Architecturally it's a single-stream DiT (Figure 2) &mdash; conditioning and generation tokens self-attend to each other using shared projection layers throughout. Text conditioning comes from a <strong>Qwen3 language model</strong> (4B parameters), using the second-to-last hidden layer embeddings.<span class="sidenote-ref"></span><span class="sidenote">Important detail for later: the text conditioning model is a <em>pure language model</em> &mdash; it has no vision encoder, no image tokens, no visual understanding of any kind. It only sees text.</span>
                 </p>
 
                 <p>
@@ -122,7 +123,7 @@
                 </p>
 
                 <p>
-                    And to my surprise &mdash; it worked out of the box.
+                    And to my surprise &mdash; it worked out of the box (Figure 3).
                 </p>
 
                 <figure class="figure-wide">
@@ -141,25 +142,25 @@
                 </p>
 
                 <p>
-                    I called this <strong>"Spliced QwenVL"</strong> &mdash; grafting the visual front-end of QwenVL onto the language backbone that Z-Image already knows and trusts.
+                    I called this <strong>"Spliced QwenVL"</strong> (Figure 4) &mdash; grafting the visual front-end of QwenVL onto the language backbone that Z-Image already knows and trusts.
                 </p>
+
+                <figure>
+                    <img src="spliced_model.png" alt="Diagram of the VL Splice method showing QwenVL's visual front-end grafted onto Z-Image's LM backbone">
+                    <figcaption>Figure 4: The VL Splice &mdash; QwenVL's ViT + PatchMerger grafted onto the LM backbone that Z-Image was trained with. The crossed-out section shows QwenVL's original LLM weights being replaced.</figcaption>
+                </figure>
 
                 <p>
                     It's literally <code>vl_model.language_model.load_state_dict(z_image_weights)</code> &mdash; swap the LLM weights, keep the ViT and PatchMerger from the VL model intact. Works because both models share identical architecture: 36 layers, 2560-dim hidden states.
                 </p>
 
                 <p>
-                    And to my surprise (again!) &mdash; it worked <em>exceptionally</em> well. No artifacts whatsoever. The outputs are clean enough that you'd think they were standard T2I generations. This is fully emergent behavior &mdash; no training, no fine-tuning, just an architectural splice at inference time.
+                    And to my surprise (again!) &mdash; it worked <em>exceptionally</em> well (Figure 5). No artifacts whatsoever. The outputs are clean enough that you'd think they were standard T2I generations. This is fully emergent behavior &mdash; no training, no fine-tuning, just an architectural splice at inference time.
                 </p>
 
                 <figure class="figure-wide">
                     <img src="fig_layer_tap.png" alt="Spliced QwenVL results showing clean, artifact-free image variations across different layers">
-                    <figcaption>Figure 4: Spliced QwenVL results &mdash; clean, artifact-free image variations. Compare with Figure 3 to see the difference the splice makes.</figcaption>
-                </figure>
-
-                <figure>
-                    <img src="spliced_model.png" alt="Diagram of the VL Splice method showing QwenVL's visual front-end grafted onto Z-Image's LM backbone">
-                    <figcaption>Figure 5: The VL Splice &mdash; QwenVL's ViT + PatchMerger grafted onto the LM backbone that Z-Image was trained with. The crossed-out section shows QwenVL's original LLM weights being replaced.</figcaption>
+                    <figcaption>Figure 5: Spliced QwenVL results across layers. Layers before L8 produce extreme artifacts (likely due to misaligned or malformed embeddings), but later layers yield clean, artifact-free variations. Compare with Figure 3 to see the difference the splice makes.</figcaption>
                 </figure>
 
                 <h3>"But Z-Image Has an Omni/Edit Model..."</h3>
@@ -193,7 +194,7 @@
                 <h2 id="layer-by-layer">Layer-by-Layer: A Spectrum from Faithful to Creative</h2>
 
                 <p>
-                    Here's where things get really interesting. In the original Z-Image setup, text conditioning uses layer 34 (the "-2" layer) of the Qwen3 LM. But with our spliced model, we can tap <em>any</em> intermediate layer &mdash; and each layer produces a qualitatively different kind of variation.
+                    Here's where things get really interesting. In the original Z-Image setup, text conditioning uses layer 34 (the "-2" layer) of the Qwen3 LM. But with our spliced model, we can tap <em>any</em> intermediate layer &mdash; and each layer produces a qualitatively different kind of variation (Figure 6).
                 </p>
 
                 <figure class="figure-wide">
@@ -220,7 +221,7 @@
                 <h2 id="misc">Misc Notes</h2>
 
                 <p>
-                    Multi-resolution works out of the box &mdash; input and output can be completely different resolutions and aspect ratios.<span class="marginnote">I've tested from 512&times;512 up to 1024&times;1024 with various non-square ratios, all clean.</span> The input image is capped at a maximum pixel count before VL encoding, but the DiT handles any output resolution independently.
+                    Multi-resolution works out of the box &mdash; input and output can be completely different resolutions and aspect ratios. I've tested from 512&times;512 up to 1024&times;1024 with various non-square ratios, all clean. The input image is capped at a maximum pixel count before VL encoding, but the DiT handles any output resolution independently.
                 </p>
 
                 <p>
@@ -249,13 +250,21 @@
                     Stay tuned. Code and implementation details are coming as the series progresses, and we're working on a research paper covering the full scope of these findings.
                 </p>
 
+                <div class="references" id="references">
+                    <h2>References</h2>
+                    <ol>
+                        <li id="ref-1">
+                            Cai, H., Cao, S., Du, R., Gao, P., Hoi, S., Hou, Z., Huang, S., Jiang, D., Jin, X., Li, L., et al.
+                            <span class="ref-title">Z-Image: An Efficient Image Generation Foundation Model with Single-Stream Diffusion Transformer.</span>
+                            <span class="ref-venue">arXiv preprint arXiv:2511.22699</span>, 2025.
+                            <a href="https://arxiv.org/abs/2511.22699">Paper</a>
+                        </li>
+                    </ol>
+                </div>
+
                 <hr style="border: none; border-top: 1px dashed var(--border); margin: 2.5rem 0;">
 
-                <p style="font-family: var(--font-serif); font-style: italic;">
-                    I'm Gowthami Somepalli &mdash; I work on diffusion models, alignment, and controllability. You can find me on <a href="#">Twitter/X</a> or check out my <a href="https://somepago.github.io">website</a>.
-                </p>
-
-                <p style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-top: 2rem;">
+                <p style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
                     If you would like to cite this post in an academic context, you can use this BibTeX snippet:
                 </p>
 
