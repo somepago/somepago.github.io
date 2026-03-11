@@ -732,6 +732,23 @@ footer p {
     counter-reset: sidenote-counter;
 }
 
+/* Larger headings for distill posts */
+.distill-post .post-content h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.distill-post .post-content h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+}
+
 /* --- Sidenotes (numbered) --- */
 
 .sidenote-ref {

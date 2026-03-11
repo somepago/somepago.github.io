@@ -40,14 +40,14 @@
                 </p>
 
                 <p class="lead">
-                    Z-Image Base and Turbo are both text-to-image models. But it turns out they're <em>secretly</em> image-to-image models too &mdash; you just have to unearth that emergent behavior with a little architectural hacking. In this series of blog posts, I'm going to share a bunch of quite interesting results I've stumbled upon over the past few weeks.
+                    Z-Image Base and Turbo are both text-to-image models. But it turns out they're <em>secretly</em> image-to-image models too<span class="sidenote-ref"></span><span class="sidenote">By "image-to-image" I don't mean instruction-based editing like "remove the hat." I mean creative visual riffing &mdash; you give the model an image and it produces variations that preserve the semantic essence while freely reinterpreting structure, color, and composition. Think visual brainstorming, not surgical editing.</span> &mdash; you just have to unearth that emergent behavior with a little architectural hacking. In this series of blog posts, I'm going to share a bunch of quite interesting results I've stumbled upon over the past few weeks.
                 </p>
 
                 <p>Here's a taste &mdash; some image-to-image variations, generated with zero additional training:</p>
 
                 <figure class="figure-wide">
-                    <img src="fig_layer_tap.png" alt="Image-to-image variations using the VL Splice method across different layers, showing reference images and their zero-shot variations">
-                    <figcaption>Figure 1: Image-to-image variations via VL Splice &mdash; generated with zero additional training. Each row shows a reference image and its variations at different layer taps.</figcaption>
+                    <img src="fig_teaser.png" alt="Reference images and their zero-shot image-to-image variations generated with no additional training">
+                    <figcaption>Figure 1: Image-to-image variations generated with zero additional training. Top: reference images. Bottom: variations produced by the VL Splice method.</figcaption>
                 </figure>
 
                 <nav class="distill-toc">
@@ -79,7 +79,7 @@
                 <h2 id="quick-intro">Z-Image &mdash; Quick Intro</h2>
 
                 <p>
-                    There are two models, both 6B parameters. <strong>Base</strong> runs at 50 steps with CFG=4, and <strong>Turbo</strong> (distilled) runs at 8 steps with no CFG. Architecturally it's a single-stream DiT &mdash; conditioning and generation tokens self-attend to each other using shared projection layers throughout. Text conditioning comes from a <strong>Qwen3 language model</strong> (4B parameters), using the second-to-last hidden layer embeddings.<span class="sidenote-ref"></span><span class="sidenote">Important detail for later: this is a <em>pure language model</em>. No vision capabilities baked in.</span>
+                    There are two models, both 6B parameters. <strong>Base</strong> runs at 50 steps with CFG=4, and <strong>Turbo</strong> (distilled) runs at 8 steps with no CFG. Architecturally it's a single-stream DiT &mdash; conditioning and generation tokens self-attend to each other using shared projection layers throughout. Text conditioning comes from a <strong>Qwen3 language model</strong> (4B parameters), using the second-to-last hidden layer embeddings.<span class="sidenote-ref"></span><span class="sidenote">Important detail for later: the text conditioning model is a <em>pure language model</em> &mdash; it has no vision encoder, no image tokens, no visual understanding of any kind. It only sees text.</span>
                 </p>
 
                 <p>
@@ -144,16 +144,6 @@
                     I called this <strong>"Spliced QwenVL"</strong> &mdash; grafting the visual front-end of QwenVL onto the language backbone that Z-Image already knows and trusts.
                 </p>
 
-                <pre><code>═══════════════════════════════════════════════════════════════
-  VL SPLICE
-═══════════════════════════════════════════════════════════════
-
-  Image &rarr; [ ViT + PatchMerger ] &dash;&dash;&dash;┐
-            from Qwen3-VL        │
-                                 ├&rarr; [ Z-Image LLM weights ] &rarr; hidden_states &rarr; DiT &rarr; Image
-  Text  &rarr; [ tokenizer ]&dash;&dash;&dash;&dash;&dash;&dash;&dash;&dash;&dash;┘   SPLICED INTO
-            from Qwen3-VL           Qwen3-VL's LLM slot</code></pre>
-
                 <p>
                     It's literally <code>vl_model.language_model.load_state_dict(z_image_weights)</code> &mdash; swap the LLM weights, keep the ViT and PatchMerger from the VL model intact. Works because both models share identical architecture: 36 layers, 2560-dim hidden states.
                 </p>
@@ -162,9 +152,14 @@
                     And to my surprise (again!) &mdash; it worked <em>exceptionally</em> well. No artifacts whatsoever. The outputs are clean enough that you'd think they were standard T2I generations. This is fully emergent behavior &mdash; no training, no fine-tuning, just an architectural splice at inference time.
                 </p>
 
+                <figure class="figure-wide">
+                    <img src="fig_layer_tap.png" alt="Spliced QwenVL results showing clean, artifact-free image variations across different layers">
+                    <figcaption>Figure 4: Spliced QwenVL results &mdash; clean, artifact-free image variations. Compare with Figure 3 to see the difference the splice makes.</figcaption>
+                </figure>
+
                 <figure>
                     <img src="spliced_model.png" alt="Diagram of the VL Splice method showing QwenVL's visual front-end grafted onto Z-Image's LM backbone">
-                    <figcaption>Figure 4: The VL Splice &mdash; QwenVL's ViT + PatchMerger grafted onto the LM backbone that Z-Image was trained with. The crossed-out section shows QwenVL's original LLM weights being replaced.</figcaption>
+                    <figcaption>Figure 5: The VL Splice &mdash; QwenVL's ViT + PatchMerger grafted onto the LM backbone that Z-Image was trained with. The crossed-out section shows QwenVL's original LLM weights being replaced.</figcaption>
                 </figure>
 
                 <h3>"But Z-Image Has an Omni/Edit Model..."</h3>
@@ -192,7 +187,7 @@
                 </p>
 
                 <p>
-                    I also confirmed that Z-Image's text encoder is essentially <strong>frozen Qwen3-4B base</strong> &mdash; the safetensors blob hashes are nearly identical. So the LM weights weren't heavily fine-tuned during Z-Image training, which means the splice is even less of a distribution shift than you'd expect.
+                    I also confirmed that Z-Image's text encoder is essentially <strong>frozen Qwen3-4B base</strong> &mdash; the safetensors blob hashes match. The LM weights were never fine-tuned during Z-Image training. But here's the more interesting implication: the fact that the splice works at all tells us something about QwenVL's training. If QwenVL had dramatically altered the LM's representation space during vision-language training, swapping in the original LM weights would break everything. The visual embeddings making sense even with untouched LM weights suggests QwenVL's vision training was relatively conservative &mdash; it learned to project visual tokens <em>into</em> the existing LM representation space rather than reshaping that space around vision.
                 </p>
 
                 <h2 id="layer-by-layer">Layer-by-Layer: A Spectrum from Faithful to Creative</h2>
@@ -203,7 +198,7 @@
 
                 <figure class="figure-wide">
                     <img src="fig_layer_properties.png" alt="Grid showing object count and semantic preservation across conditioning layers, from layer 8 to layer 35">
-                    <figcaption>Figure 5: Object count and semantics across conditioning layers &mdash; earlier layers preserve spatial layout and object count, later layers produce increasingly creative semantic reinterpretations.</figcaption>
+                    <figcaption>Figure 6: Object count and semantics across conditioning layers &mdash; earlier layers preserve spatial layout and object count, later layers produce increasingly creative semantic reinterpretations.</figcaption>
                 </figure>
 
                 <p>
@@ -211,11 +206,11 @@
                 </p>
 
                 <p>
-                    <strong>Earlier layers</strong> preserve more information about the original image: spatial layout, object count, color palette. The variations stay close to the input. <strong>Later layers</strong> produce more semantically-driven reinterpretations.<span class="sidenote-ref"></span><span class="sidenote">The LM's learned biases start showing through &mdash; object counts may change, color schemes get remapped (a red dress becomes blue), compositions get freely reinterpreted. Counting goes out the window.</span>
+                    <strong>Earlier layers</strong> preserve more information about the original image: spatial layout, object count, color palette. The variations stay close to the input. <strong>Later layers</strong> produce more semantically-driven reinterpretations. The LM's learned biases start showing through &mdash; object counts may change, color schemes get remapped (a red dress becomes blue), compositions get freely reinterpreted. Counting goes out the window: expect different numbers of subjects, sometimes more, sometimes fewer. Text in images gets especially mangled &mdash; the model tends to preserve the visual <em>presence</em> of text (it knows there should be words there) but generates random character sequences instead of the original content. It's encoding "there is text here" as a semantic concept without retaining the actual string.
                 </p>
 
                 <p>
-                    I personally found <strong>layer 24</strong> hits a sweet spot of creative reinterpretation while maintaining coherence &mdash; it feels like the model is <em>thinking</em> about the image rather than copying it. <strong>Layer 35</strong> (the last layer) is also surprisingly good: it sometimes produces outputs that feel like the model took the <em>concept</em> of the image and rebuilt it from scratch.
+                    I personally found <strong>layer 24</strong> hits a sweet spot of creative reinterpretation while maintaining coherence &mdash; it feels like the model is <em>thinking</em> about the image rather than copying it. <strong>Layer 34</strong> (the default "-2" layer) is reliably strong across the board. <strong>Layer 35</strong> (the last layer) is the fun one &mdash; it sometimes surprises you with nuanced reconceptualizations of the input, as if it decided to reinterpret the scene at a higher level of abstraction. It also has a funny habit of just... deciding not to render text at all, even when the input is text-heavy. Apparently the final layer's representation compresses past the point where "there should be words here" survives.
                 </p>
 
                 <p>
@@ -225,7 +220,7 @@
                 <h2 id="misc">Misc Notes</h2>
 
                 <p>
-                    Multi-resolution works out of the box &mdash; input and output can be completely different resolutions and aspect ratios.<span class="marginnote">I've tested from 512&times;512 up to 1024&times;1024 with various non-square ratios, all clean. The input image is capped at a maximum pixel count before VL encoding, but the DiT handles any output resolution independently.</span>
+                    Multi-resolution works out of the box &mdash; input and output can be completely different resolutions and aspect ratios.<span class="marginnote">I've tested from 512&times;512 up to 1024&times;1024 with various non-square ratios, all clean.</span> The input image is capped at a maximum pixel count before VL encoding, but the DiT handles any output resolution independently.
                 </p>
 
                 <p>
@@ -239,15 +234,15 @@
                 </p>
 
                 <p>
-                    <strong>Part 2 &mdash; Where Did the Diversity Go?</strong> The splice works great, but there's a problem: outputs across different seeds converge on suspiciously similar compositions and palettes. I dug into the DiT's attention maps during denoising and found fascinating attention sinks &mdash; template special tokens and top-left visual tokens that receive wildly disproportionate attention. Understanding these sinks led to targeted dropout strategies that actually recover diversity without destroying quality.
+                    <strong>Part 2 &mdash; Where Did the Diversity Go?</strong> The splice works, but outputs across seeds look suspiciously similar. Turns out the DiT has fascinating attention sinks that explain why &mdash; and exploiting them recovers diversity.
                 </p>
 
                 <p>
-                    <strong>Part 3 &mdash; Approximate Object Composites for Free.</strong> What happens when you feed two images instead of one? I tested several blend strategies (joint encoding with cross-attention, separate encoding with averaging, per-image scaling), built custom attention masks to block cross-image content leakage, and tried SDEdit-style denoising where the model "cleans up" rough cut-paste collages. Some of this works surprisingly well zero-shot.
+                    <strong>Part 3 &mdash; Approximate Object Composites for Free.</strong> Take a rough cut-paste collage, run it through the I2I pipeline with SDEdit, and the model cleans it up into a coherent image. Zero training, zero prompt engineering.
                 </p>
 
                 <p>
-                    <strong>Part 4 &mdash; Freeform Explorations and Failed Experiments.</strong> Text-guided variations (spoiler: 3% hit rate), why training a SigLIP projection into omni-mode is a dead end, the DiffusionNFT saga, and other lessons from the things that didn't work. Sometimes the failures are more interesting than the successes.
+                    <strong>Part 4 &mdash; Freeform Explorations and Failed Experiments.</strong> Sometimes the failures are more interesting than the successes.
                 </p>
 
                 <p>
@@ -256,6 +251,9 @@
 
                 <hr style="border: none; border-top: 1px dashed var(--border); margin: 2.5rem 0;">
 
+                <p style="font-family: var(--font-serif); font-style: italic;">
+                    I'm Gowthami Somepalli &mdash; I work on diffusion models, alignment, and controllability. You can find me on <a href="#">Twitter/X</a> or check out my <a href="https://somepago.github.io">website</a>.
+                </p>
 
                 <p style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-top: 2rem;">
                     If you would like to cite this post in an academic context, you can use this BibTeX snippet:
