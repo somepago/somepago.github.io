@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergent Behaviour Rabbit Hole: Z-Image Is Secretly an I2I Model · Gowthami Somepalli</title>
+    <link rel="icon" href="../../favicons/favicon.ico">
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+    <div class="distill-post">
+        <nav>
+            <a href="../../index.html">home</a>
+            <a href="../../blog.html">blog</a>
+            <a href="../../notes.html">notes</a>
+            <a href="../../stories.html">stories</a>
+            <a href="../../files/Gowthami_CV.pdf">cv</a>
+        </nav>
+
+        <article>
+            <header class="post-header">
+                <a href="../../blog.html" class="back-link">&larr; back to blog</a>
+                <h1>Emergent Behaviour Rabbit Hole: Z-Image Is Secretly an Image-to-Image Model</h1>
+                <div class="post-meta">
+                    <time>March 2026</time> &middot; 12 min read
+                </div>
+                <div class="post-tags">
+                    <span class="tag">diffusion</span>
+                    <span class="tag">image-to-image</span>
+                    <span class="tag">emergent behavior</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p style="font-family: var(--font-serif); font-size: 0.95rem; color: var(--text-muted); font-style: italic; margin-bottom: 0.25rem;">
+                    By <a href="https://somepago.github.io" style="color: var(--text-muted);">Gowthami Somepalli</a> and <a href="https://www.linkedin.com/in/sravanisomepalli/" style="color: var(--text-muted);">Sravani Somepalli</a> &middot; Part 1 of the Emergent Behaviour Rabbit Hole series
+                </p>
+                <p style="font-family: var(--font-serif); font-size: 0.85rem; color: var(--text-muted); font-style: italic; margin-bottom: 2rem;">
+                    This is original, independent research. A full paper with detailed analysis and reproducible experiments is in preparation.
+                </p>
+
+                <p class="lead">
+                    Z-Image Base and Turbo are both text-to-image models. But it turns out they're <em>secretly</em> image-to-image models too &mdash; you just have to unearth that emergent behavior with a little architectural hacking. In this series of blog posts, I'm going to share a bunch of quite interesting results I've stumbled upon over the past few weeks.
+                </p>
+
+                <p>Here's a taste &mdash; some image-to-image variations, generated with zero additional training:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_layer_tap.png" alt="Image-to-image variations using the VL Splice method across different layers, showing reference images and their zero-shot variations">
+                    <figcaption>Figure 1: Image-to-image variations via VL Splice &mdash; generated with zero additional training. Each row shows a reference image and its variations at different layer taps.</figcaption>
+                </figure>
+
+                <nav class="distill-toc">
+                    <h2>Contents</h2>
+                    <ol>
+                        <li><a href="#why-zimage">Why Z-Image?</a></li>
+                        <li><a href="#quick-intro">Z-Image &mdash; Quick Intro</a></li>
+                        <li><a href="#emergent-i2i">Emergent Image-to-Image Behavior</a></li>
+                        <li><a href="#layer-by-layer">Layer-by-Layer: Faithful to Creative</a></li>
+                        <li><a href="#misc">Misc Notes</a></li>
+                        <li><a href="#whats-next">What's Next</a></li>
+                    </ol>
+                </nav>
+
+                <h2 id="why-zimage">Why Z-Image?</h2>
+
+                <p>
+                    Z-Image is an incredible image generation model that came out a few months ago. It's open-source, its 6B model is remarkably capable, and &mdash; this is the rare part &mdash; both the base and distilled versions are released. The science of studying the gap between these two is fascinating in its own right.
+                </p>
+
+                <p>
+                    But the main reason I'm excited: it's a <strong>single-stream diffusion transformer</strong> (SS-DiT). Conditioning tokens and generation tokens share the same attention layers, the same projections, everything.<span class="sidenote-ref"></span><span class="sidenote">SS-DiTs are architecturally simpler than dual-stream alternatives like SD3/FLUX, where conditioning and generation have separate processing paths that only interact at specific cross-attention points.</span> I like SS-DiTs not just because they're simpler to train and ablate, but because they tend to harbor interesting emergent capabilities &mdash; capabilities the model was never explicitly trained for, just waiting to be surfaced.
+                </p>
+
+                <p>
+                    That's really the heart of this series. We talk a lot about "scaffolding" in the LLM world &mdash; wrapping models in tool-use pipelines and agentic loops to coax out capabilities the base model technically has but doesn't easily expose. That kind of thinking is surprisingly underdeveloped in image generation. Most people treat diffusion models as fixed input&#8594;output boxes. There's a lot of latent capability hiding inside these architectures, and sometimes all it takes is a creative rewiring to unlock it.
+                </p>
+
+                <h2 id="quick-intro">Z-Image &mdash; Quick Intro</h2>
+
+                <p>
+                    There are two models, both 6B parameters. <strong>Base</strong> runs at 50 steps with CFG=4, and <strong>Turbo</strong> (distilled) runs at 8 steps with no CFG. Architecturally it's a single-stream DiT &mdash; conditioning and generation tokens self-attend to each other using shared projection layers throughout. Text conditioning comes from a <strong>Qwen3 language model</strong> (4B parameters), using the second-to-last hidden layer embeddings.<span class="sidenote-ref"></span><span class="sidenote">Important detail for later: this is a <em>pure language model</em>. No vision capabilities baked in.</span>
+                </p>
+
+                <p>
+                    There's nothing too exotic about the architecture or loss functions. The magic is in their extensive data curation engines and data curriculum design &mdash; I'd attribute most of the model's quality to that. The rest comes from careful post-training: they performed <strong>distillation + RL in a single step</strong>, which is something of a first for training large-ish DiT models in the open-source world.
+                </p>
+
+                <p>
+                    One downside worth noting: I see noticeable <strong>diversity collapse in the Turbo model</strong>.<span class="marginnote">Even across different seeds, generations tend to converge on similar structures and color palettes. The RLHF fingerprint is <em>very</em> visible in the outputs.</span> They clearly invested enormous effort in reward model quality, but the tradeoff is strong aesthetic biases baked into the model.
+                </p>
+
+                <figure>
+                    <img src="zimage-arch.png" alt="Z-Image architecture diagram showing the single-stream DiT with Qwen3 text encoder, attention blocks, and FFN blocks">
+                    <figcaption>Figure 2: Z-Image architecture &mdash; a single-stream DiT where text and image tokens share the same attention and FFN layers throughout.</figcaption>
+                </figure>
+
+                <h2 id="emergent-i2i">Emergent Image-to-Image Behavior</h2>
+
+                <p>
+                    Before I dive in &mdash; when I say "image-to-image" here, I don't mean instruction-based editing ("remove the hat," "change the background"). I mean something more like <strong>creative visual riffing</strong>: you give the model an image, and it produces variations that preserve the semantic essence while freely reinterpreting structure, color, composition. Think visual brainstorming, not surgical editing.
+                </p>
+
+                <h3>The Starting Point</h3>
+
+                <p>
+                    When I started this project, my plan was straightforward: take Z-Image and fine-tune it into an I2I model by integrating image embeddings as conditioning.<span class="sidenote-ref"></span><span class="sidenote">Why? Because image variations and interpolations are endlessly fun.</span>
+                </p>
+
+                <p>
+                    Z-Image's technical report mentions they trained an <strong>omni model</strong> as the parent of both Base and Turbo &mdash; so the model has seen image understanding objectives. But neither the omni checkpoint nor any editing weights were released. I tried integrating SigLIP into Z-Image Turbo as an image encoder. Didn't work out.
+                </p>
+
+                <h3>The "For Shits and Giggles" Experiment</h3>
+
+                <p>
+                    Then I had a thought: the text encoder is Qwen3 (a pure LM), and Qwen3-VL is its vision-language sibling &mdash; same transformer backbone, but with visual understanding bolted on. What if I just swap Qwen3-LM with Qwen3-VL in the conditioning pipeline?
+                </p>
+
+                <p>
+                    So, mostly out of curiosity, I ran a few inferences.
+                </p>
+
+                <p>
+                    And to my surprise &mdash; it worked out of the box.
+                </p>
+
+                <figure class="figure-wide">
+                    <img src="fig_layer_tap_unspliced.png" alt="First QwenVL results showing image variations with visible high-frequency artifacts">
+                    <figcaption>Figure 3: Replacing QwenLM with QwenVL as text conditioner &mdash; surprisingly coherent results, but look closely for high-frequency artifacts throughout.</figcaption>
+                </figure>
+
+                <p>
+                    ...or so I thought. The generations look quite fantastic for a zero-shot experiment, but look closely and you'll spot <strong>high-frequency artifacts</strong> throughout. Enough to make the results not practically useful.
+                </p>
+
+                <h3>The Splice That Changed Everything</h3>
+
+                <p>
+                    I bounced around a few ideas &mdash; fine-tuning projections, adapter schemes. And then the key insight hit me: QwenVL's representations are somewhat out-of-distribution for the DiT, which was trained to expect QwenLM features. What if I <strong>replace QwenVL's language model weights with QwenLM's weights</strong>, keeping only the image processing and injection modules from the VL model?
+                </p>
+
+                <p>
+                    I called this <strong>"Spliced QwenVL"</strong> &mdash; grafting the visual front-end of QwenVL onto the language backbone that Z-Image already knows and trusts.
+                </p>
+
+                <pre><code>═══════════════════════════════════════════════════════════════
+  VL SPLICE
+═══════════════════════════════════════════════════════════════
+
+  Image &rarr; [ ViT + PatchMerger ] &dash;&dash;&dash;┐
+            from Qwen3-VL        │
+                                 ├&rarr; [ Z-Image LLM weights ] &rarr; hidden_states &rarr; DiT &rarr; Image
+  Text  &rarr; [ tokenizer ]&dash;&dash;&dash;&dash;&dash;&dash;&dash;&dash;&dash;┘   SPLICED INTO
+            from Qwen3-VL           Qwen3-VL's LLM slot</code></pre>
+
+                <p>
+                    It's literally <code>vl_model.language_model.load_state_dict(z_image_weights)</code> &mdash; swap the LLM weights, keep the ViT and PatchMerger from the VL model intact. Works because both models share identical architecture: 36 layers, 2560-dim hidden states.
+                </p>
+
+                <p>
+                    And to my surprise (again!) &mdash; it worked <em>exceptionally</em> well. No artifacts whatsoever. The outputs are clean enough that you'd think they were standard T2I generations. This is fully emergent behavior &mdash; no training, no fine-tuning, just an architectural splice at inference time.
+                </p>
+
+                <figure>
+                    <img src="spliced_model.png" alt="Diagram of the VL Splice method showing QwenVL's visual front-end grafted onto Z-Image's LM backbone">
+                    <figcaption>Figure 4: The VL Splice &mdash; QwenVL's ViT + PatchMerger grafted onto the LM backbone that Z-Image was trained with. The crossed-out section shows QwenVL's original LLM weights being replaced.</figcaption>
+                </figure>
+
+                <h3>"But Z-Image Has an Omni/Edit Model..."</h3>
+
+                <p>
+                    Yes &mdash; Z-Image trained an omni model with image understanding, and yes, they have editing capabilities. But those checkpoints aren't released. What you're looking at here is the <strong>text-to-image-only checkpoint</strong> doing image-to-image with zero training, zero fine-tuning, zero adapters.<span class="sidenote-ref"></span><span class="sidenote">The Turbo model has no SigLIP weights, no image conditioning pathway, nothing. It was trained purely to go from text&#8594;image.</span> The fact that it produces coherent, artifact-free image variations through nothing more than an inference-time weight splice is what makes this emergent behavior &mdash; not a feature the model was designed to have, but one that falls out of the architecture for free.
+                </p>
+
+                <h3>Why Does This Work?</h3>
+
+                <p>
+                    Here's my working intuition (would love to hear alternative theories).
+                </p>
+
+                <p>
+                    <strong>Distribution alignment matters more than capability.</strong> QwenVL <em>can</em> produce rich visual features, but they live in a slightly different feature space than what the DiT expects. Swapping in the LM weights projects visual information through a representation space the DiT has already been calibrated to consume. The image information gets "translated" into the dialect the DiT speaks.
+                </p>
+
+                <p>
+                    <strong>The visual front-end does the heavy lifting.</strong> The ViT and PatchMerger from QwenVL extract and structure the visual information. The LM backbone then acts as a feature normalizer &mdash; reshaping those signals into something that looks like "text conditioning" to the DiT, even though it's carrying image semantics.
+                </p>
+
+                <p>
+                    <strong>SS-DiTs might be especially amenable to this.</strong><span class="sidenote-ref"></span><span class="sidenote">Because single-stream architectures process conditioning and generation tokens in shared attention, they may be more robust to conditioning signals that are semantically coherent but come from unexpected sources.</span> The shared self-attention acts as a natural harmonizer.
+                </p>
+
+                <p>
+                    I also confirmed that Z-Image's text encoder is essentially <strong>frozen Qwen3-4B base</strong> &mdash; the safetensors blob hashes are nearly identical. So the LM weights weren't heavily fine-tuned during Z-Image training, which means the splice is even less of a distribution shift than you'd expect.
+                </p>
+
+                <h2 id="layer-by-layer">Layer-by-Layer: A Spectrum from Faithful to Creative</h2>
+
+                <p>
+                    Here's where things get really interesting. In the original Z-Image setup, text conditioning uses layer 34 (the "-2" layer) of the Qwen3 LM. But with our spliced model, we can tap <em>any</em> intermediate layer &mdash; and each layer produces a qualitatively different kind of variation.
+                </p>
+
+                <figure class="figure-wide">
+                    <img src="fig_layer_properties.png" alt="Grid showing object count and semantic preservation across conditioning layers, from layer 8 to layer 35">
+                    <figcaption>Figure 5: Object count and semantics across conditioning layers &mdash; earlier layers preserve spatial layout and object count, later layers produce increasingly creative semantic reinterpretations.</figcaption>
+                </figure>
+
+                <p>
+                    Layers at or after <strong>layer 12</strong> generally produce coherent images. This isn't a fragile single-sweet-spot phenomenon &mdash; many intermediate layers work. But the character of the variations shifts dramatically as you go deeper.
+                </p>
+
+                <p>
+                    <strong>Earlier layers</strong> preserve more information about the original image: spatial layout, object count, color palette. The variations stay close to the input. <strong>Later layers</strong> produce more semantically-driven reinterpretations.<span class="sidenote-ref"></span><span class="sidenote">The LM's learned biases start showing through &mdash; object counts may change, color schemes get remapped (a red dress becomes blue), compositions get freely reinterpreted. Counting goes out the window.</span>
+                </p>
+
+                <p>
+                    I personally found <strong>layer 24</strong> hits a sweet spot of creative reinterpretation while maintaining coherence &mdash; it feels like the model is <em>thinking</em> about the image rather than copying it. <strong>Layer 35</strong> (the last layer) is also surprisingly good: it sometimes produces outputs that feel like the model took the <em>concept</em> of the image and rebuilt it from scratch.
+                </p>
+
+                <p>
+                    There's a nice theoretical lens here: this layer-by-layer behavior is essentially probing how the LLM's internal representations encode visual information. Earlier layers retain more perceptual detail, later layers compress toward semantic abstractions. The DiT faithfully reflects whatever level of abstraction it's given.
+                </p>
+
+                <h2 id="misc">Misc Notes</h2>
+
+                <p>
+                    Multi-resolution works out of the box &mdash; input and output can be completely different resolutions and aspect ratios.<span class="marginnote">I've tested from 512&times;512 up to 1024&times;1024 with various non-square ratios, all clean. The input image is capped at a maximum pixel count before VL encoding, but the DiT handles any output resolution independently.</span>
+                </p>
+
+                <p>
+                    All results shown here use <strong>zero additional training</strong>. This is purely architectural modification at inference time. The emergent behavior was always there &mdash; it just needed the right wiring to surface.
+                </p>
+
+                <h2 id="whats-next">What's Next</h2>
+
+                <p>
+                    This is Part 1. I've been deep in this rabbit hole for weeks now and there's a lot more to share.
+                </p>
+
+                <p>
+                    <strong>Part 2 &mdash; Where Did the Diversity Go?</strong> The splice works great, but there's a problem: outputs across different seeds converge on suspiciously similar compositions and palettes. I dug into the DiT's attention maps during denoising and found fascinating attention sinks &mdash; template special tokens and top-left visual tokens that receive wildly disproportionate attention. Understanding these sinks led to targeted dropout strategies that actually recover diversity without destroying quality.
+                </p>
+
+                <p>
+                    <strong>Part 3 &mdash; Approximate Object Composites for Free.</strong> What happens when you feed two images instead of one? I tested several blend strategies (joint encoding with cross-attention, separate encoding with averaging, per-image scaling), built custom attention masks to block cross-image content leakage, and tried SDEdit-style denoising where the model "cleans up" rough cut-paste collages. Some of this works surprisingly well zero-shot.
+                </p>
+
+                <p>
+                    <strong>Part 4 &mdash; Freeform Explorations and Failed Experiments.</strong> Text-guided variations (spoiler: 3% hit rate), why training a SigLIP projection into omni-mode is a dead end, the DiffusionNFT saga, and other lessons from the things that didn't work. Sometimes the failures are more interesting than the successes.
+                </p>
+
+                <p>
+                    Stay tuned. Code and implementation details are coming as the series progresses, and we're working on a research paper covering the full scope of these findings.
+                </p>
+
+                <hr style="border: none; border-top: 1px dashed var(--border); margin: 2.5rem 0;">
+
+
+                <p style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-top: 2rem;">
+                    If you would like to cite this post in an academic context, you can use this BibTeX snippet:
+                </p>
+
+                <pre><code>@misc{somepalli2026emergent,
+  author = {Somepalli, Gowthami and Somepalli, Sravani},
+  title = {Emergent Behaviour Rabbit Hole: Z-Image Is Secretly an Image-to-Image Model},
+  url = {https://somepago.github.io/blog/2026/emergent-i2i-part1.html},
+  year = {2026}
+}</code></pre>
+
+            </div>
+        </article>
+
+        <footer>
+            <p>&copy; 2026</p>
+        </footer>
+    </div>
+</body>
+</html>
