@@ -148,7 +148,7 @@
                 </figure>
 
                 <p>
-                    The diversity is striking. Instead of four copies of the same plumber, you get four genuinely different takes. Different poses, different tools, different compositions. The model finally has room to be creative because the conditioning signal is sparse enough that it has to fill in the gaps.
+                    The diversity is striking. Instead of four copies of the same plumber, you get four genuinely different takes. Different poses, different tools, (somewhat) different compositions. The model finally has room to be creative because the conditioning signal is sparse enough that it has to fill in the gaps.
                 </p>
 
                 <p>
@@ -165,7 +165,7 @@
                 <h2 id="attention-sinks">The Side Quest: Hunting Attention Sinks</h2>
 
                 <p>
-                    We stared at the broken seeds for a while, then had a hypothesis: maybe some tokens are more important than others. At 75% random dropout, we're probably dropping some critical tokens that the DiT really needs.
+                    Why are some seeds breaking but others aren't, only difference being random token drop which led to the hypothesis: maybe some tokens are more important than others. At 75% random dropout, we're probably dropping some critical tokens that the DiT really needs.
                 </p>
 
                 <p>To test this, we dug into what tokens actually exist in the conditioning sequence. The full VL embedding isn't just visual tokens &mdash; it's wrapped in a chat template:</p>
@@ -178,8 +178,19 @@
                     There are <strong>template tokens</strong> (the chat scaffolding &mdash; ~20 tokens) and <strong>visual tokens</strong> (the actual image information &mdash; ~1000&ndash;1500 tokens at 768&times;768 depending on aspect ratio). Random dropout doesn't distinguish between them.
                 </p>
 
+                <p>We captured the DiT's attention patterns over the conditioning tokens during denoising, and something jumped right out:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_attention_combined.png" alt="Attention heatmap showing template sinks and denoising progression">
+                    <figcaption>Figure 6: Top &mdash; attention mass per conditioning token (y-axis) across denoising timesteps (x-axis). Bright lines = high attention. The first few tokens at index 0&ndash;15 are the prefix template tokens (<code>&lt;|im_start|&gt; system \n You are a helpful assistant. &lt;|im_end|&gt; \n &lt;|im_start|&gt; user \n</code>). The bright lines at the bottom (~index 240&ndash;280) are the suffix template tokens (<code>&lt;|vision_end|&gt; &lt;|im_end|&gt; \n &lt;|im_start|&gt; assistant \n</code>). The dark middle region is the actual visual tokens &mdash; each one receives relatively little individual attention. Bottom &mdash; the corresponding denoising progression from noise to final image.</figcaption>
+                </figure>
+
                 <p>
-                    Now, <strong>attention sinks</strong> are a well-studied phenomenon in causal language models<span class="sidenote-ref"></span><span class="sidenote">In any causal (left-to-right) transformer, early tokens in the sequence accumulate disproportionate attention mass simply because every subsequent token can attend to them. They become "sinks" &mdash; dumping grounds for attention that doesn't have anywhere more specific to go.</span>. It's important to distinguish two types of sinks in our conditioning sequence, because they behave very differently under dropout:
+                    Figure 6 tells the story clearly: the bright horizontal lines at the top and bottom are template tokens &mdash; they receive 10&ndash;50x more attention than individual visual tokens. The prefix tokens (token 0: <code>&lt;|im_start|&gt;</code>, token 1: <code>system</code>) are the biggest attention magnets, but the suffix tokens (<code>&lt;|im_end|&gt;</code>, <code>assistant</code>) also absorb significant attention. These aren't just background scaffolding &mdash; they're <strong>attention sinks</strong>.
+                </p>
+
+                <p>
+                    <strong>Attention sinks</strong> are a well-studied phenomenon in causal language models<span class="sidenote-ref"></span><span class="sidenote">In any causal (left-to-right) transformer, early tokens in the sequence accumulate disproportionate attention mass simply because every subsequent token can attend to them. They become &ldquo;sinks&rdquo; &mdash; dumping grounds for attention that doesn't have anywhere more specific to go.</span>. It's important to distinguish two types of sinks in our conditioning sequence, because they behave very differently under dropout:
                 </p>
 
                 <p>
@@ -188,17 +199,6 @@
 
                 <p>
                     <strong>Visual sinks</strong> are the top-left visual patch tokens, which absorb extra attention simply because they appear first in the visual token sequence (due to raster-scan ordering + causal attention). These are <em>positional</em> sinks &mdash; high-attention but not actually carrying unique information. After passing through 34 layers of the VL LLM with causal self-attention, image information gets redundantly spread across all visual tokens. Each visual token encodes a mixed representation of the full image context, not just its local patch. So dropping any individual visual token &mdash; even a high-attention one &mdash; barely matters, because the same information is recoverable from neighboring tokens. This redundancy is why we can drop 95% of visual tokens and still get coherent generations.
-                </p>
-
-                <p>We captured the DiT's attention patterns over the conditioning tokens during denoising, and the sink structure jumped right out:</p>
-
-                <figure class="figure-wide">
-                    <img src="fig_attention_combined.png" alt="Attention heatmap showing template sinks and denoising progression">
-                    <figcaption>Figure 6: Top &mdash; attention mass per conditioning token (y-axis) across denoising timesteps (x-axis). Bright lines = high attention. The first few tokens at index 0&ndash;15 are the prefix template sinks (<code>&lt;|im_start|&gt; system \n You are a helpful assistant. &lt;|im_end|&gt; \n &lt;|im_start|&gt; user \n</code>). The bright lines at the bottom (~index 240&ndash;280) are the suffix template sinks (<code>&lt;|vision_end|&gt; &lt;|im_end|&gt; \n &lt;|im_start|&gt; assistant \n</code>). The dark middle region is the actual visual tokens &mdash; each one receives relatively little individual attention. Bottom &mdash; the corresponding denoising progression from noise to final image.</figcaption>
-                </figure>
-
-                <p>
-                    Figure 6 tells the story clearly: the bright horizontal lines at the top and bottom are template sinks &mdash; they receive 10&ndash;50x more attention than individual visual tokens. The prefix sinks (token 0: <code>&lt;|im_start|&gt;</code>, token 1: <code>system</code>) are the biggest attention magnets, but the suffix sinks (<code>&lt;|im_end|&gt;</code>, <code>assistant</code>) also absorb significant attention. These aren't just background scaffolding. The DiT has learned to use them as global context anchors during generation.
                 </p>
 
                 <p>
