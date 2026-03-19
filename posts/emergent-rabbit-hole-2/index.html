@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergent Behaviour Rabbit Hole: Token Dropout for Diverse Image Variations · Gowthami Somepalli</title>
+    <link rel="icon" href="../../favicons/favicon.ico">
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+    <div class="distill-post">
+        <nav>
+            <a href="../../index.html">home</a>
+            <a href="../../blog.html">blog</a>
+            <a href="../../notes.html">notes</a>
+            <a href="../../stories.html">stories</a>
+            <a href="../../files/Gowthami_CV.pdf">cv</a>
+        </nav>
+
+        <article>
+            <header class="post-header">
+                <a href="../../blog.html" class="back-link">&larr; back to blog</a>
+                <h1>Emergent Behaviour Rabbit Hole: Token Dropout for Diverse Image Variations</h1>
+                <div class="post-meta">
+                    <time>March 2026</time> &middot; 15 min read
+                </div>
+                <div class="post-tags">
+                    <span class="tag">diffusion</span>
+                    <span class="tag">image-to-image</span>
+                    <span class="tag">token dropout</span>
+                    <span class="tag">attention sinks</span>
+                </div>
+            </header>
+
+            <div class="post-content">
+                <p style="font-family: var(--font-serif); font-size: 0.95rem; color: var(--text-muted); font-style: italic; margin-bottom: 0.25rem;">
+                    By <a href="https://somepago.github.io" style="color: var(--text-muted);">Gowthami Somepalli</a> and <a href="https://www.linkedin.com/in/sravanisomepalli/" style="color: var(--text-muted);">Sravani Somepalli</a> &middot; Part 2 of the Emergent Behaviour Rabbit Hole series. This is original, independent research. A full paper with detailed analysis and reproducible experiments is in preparation.
+                </p>
+
+                <figure class="figure-wide">
+                    <img src="fig_teaser2.png" alt="Token Dropout Before/After comparison showing diverse image variations">
+                    <figcaption>Same input image, same model, same pipeline. Left: four seeds produce nearly identical outputs. Right: with vision-only token dropout, each seed gives a genuinely different variation. The fix? Randomly dropping 85% of the visual tokens before generation.</figcaption>
+                </figure>
+
+                <p class="lead">
+                    In <a href="../emergent-rabbit-hole/">Part 1</a>, I showed how a simple weight splice turns Z-Image into an image-to-image model &mdash; zero training, just swapping QwenVL's LM weights with Z-Image's. The results were surprisingly clean. But something was bugging me.
+                </p>
+
+                <p>
+                    Quick note on setup: all experiments in this post use <strong>layer 34</strong> (the penultimate LLM layer, i.e. <code>hidden_states[-2]</code>) for conditioning unless stated otherwise. This is the same default layer Z-Image uses for text-to-image. Resolution is 768&times;768 max_pixels for VL encoding.
+                </p>
+
+                <p>Look at this:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_diversity_problem.png" alt="Four different random seeds producing nearly identical outputs">
+                    <figcaption>Figure 1: Four different random seeds, nearly identical outputs. Look at the first row &mdash; yellow helmet, blue overalls, similar pose, similar wrench. The only differences are minor: hand position, tool angle. For all practical purposes these are the same image four times.</figcaption>
+                </figure>
+
+                <nav class="distill-toc">
+                    <h2>Contents</h2>
+                    <ol>
+                        <li><a href="#ablations">Different Ablations</a></li>
+                        <li><a href="#token-dropout">Token Dropout: The Clear Winner</a></li>
+                        <li><a href="#attention-sinks">The Side Quest: Hunting Attention Sinks</a></li>
+                        <li><a href="#vision-only">The Fix: Vision-Only Token Dropout</a></li>
+                        <li><a href="#why-matters">Why This Matters</a></li>
+                        <li><a href="#whats-next">What's Next</a></li>
+                    </ol>
+                </nav>
+
+                <p>
+                    Two things bothered me: <strong>1)</strong> the generated images are too similar to the original &mdash; same color palette, same outfits, same composition. This defeats the whole point if variations are just slightly reshuffled copies. <strong>2)</strong> generations across different seeds are nearly identical. Z-Image-Turbo has well-known mode collapse, but it's particularly bad with image conditioning. The VL embeddings are so strong that the DiT has very little room to explore.
+                </p>
+
+                <p>So I set out to fix at least the first problem and hopefully get the second one for free along the way.</p>
+
+                <h2 id="ablations">Different Ablations</h2>
+
+                <p>I tried a bunch of standard approaches to increase diversity. Here's the rundown &mdash; most of them didn't work.</p>
+
+                <table>
+                    <tr>
+                        <th>Method</th>
+                        <th>Idea</th>
+                        <th>Result</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Reduce resolution</strong></td>
+                        <td>Fewer visual tokens &rarr; coarser representation</td>
+                        <td>Color palette and structure stubbornly retained</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Embedding noise</strong></td>
+                        <td>Add Gaussian noise to prompt embeddings</td>
+                        <td>Either ignored or destroys the image &mdash; no sweet spot</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PCA perturbation</strong></td>
+                        <td>Perturb along top-k principal components</td>
+                        <td>Absolute failure &mdash; garbled outputs (see Figure 2)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Attention temperature</strong></td>
+                        <td>Soften VL self-attention (T=0.5 to 5.0)</td>
+                        <td>No meaningful diversity gains</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Layer interpolation</strong></td>
+                        <td>LERP/SLERP between layers 24 and 34</td>
+                        <td>Interesting for creative control, doesn't solve diversity</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Multi-crop ensemble</strong></td>
+                        <td>Average embeddings from augmented views</td>
+                        <td>Modest gains, not enough</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Token shuffle</strong></td>
+                        <td>Randomly permute visual tokens</td>
+                        <td>More diverse but spatially confused</td>
+                    </tr>
+                </table>
+
+                <p>None of these cracked it. Here's a side-by-side of the best setting from each method:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_ablation_grid.png" alt="Ablation comparison showing different diversity methods">
+                    <figcaption>Figure 2: Baseline vs one setting per method, all at seed 42. Noise and temperature barely change anything from baseline. Multicrop and shuffle produce slight variation. PCA is straight up garbled. Dropout at just 50% already shows a meaningful shift &mdash; different tool, different pose. The simplest method wins.</figcaption>
+                </figure>
+
+                <h2 id="token-dropout">Token Dropout: The Clear Winner</h2>
+
+                <p>Then I tried the simplest possible thing: <strong>randomly remove a fraction of tokens from the conditioning sequence</strong> before passing it to the DiT.</p>
+
+                <p>Here's what happens as you increase the dropout rate:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_dropout_progression.png" alt="Token dropout from 0% to 75%">
+                    <figcaption>Figure 3: Token dropout from 0% to 75%, single seed. At 10&ndash;25%, minor changes. At 50%, noticeably different composition. At 75%, a completely different take on &ldquo;plumber.&rdquo;</figcaption>
+                </figure>
+
+                <p>
+                    The progression in Figure 3 is smooth and intuitive. At low dropout the changes are subtle &mdash; maybe a slightly different wrench angle. By 50% the model is making real creative choices. At 75% it's a completely different illustration.
+                </p>
+
+                <p>And when you look across multiple seeds at 75% dropout:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_dropout_comparison.png" alt="Dropout comparison across multiple seeds">
+                    <figcaption>Figure 4: Left: baseline (0% dropout), 4 seeds &mdash; nearly identical. Right: 75% token dropout, 4 seeds &mdash; real diversity in pose, composition, and style. But notice the last seed (red border) &mdash; something's off.</figcaption>
+                </figure>
+
+                <p>
+                    The diversity is striking. Instead of four copies of the same plumber, you get four genuinely different takes. Different poses, different tools, different compositions. The model finally has room to be creative because the conditioning signal is sparse enough that it has to fill in the gaps.
+                </p>
+
+                <p>
+                    But there's a catch. Look at seed s2024 &mdash; the one with the red border in Figure 4. Weird noisy artifacts, color shifts. Let me zoom in:
+                </p>
+
+                <figure class="figure-wide">
+                    <img src="fig_dropout_artifacts.png" alt="Zoomed-in crops showing artifacts from random dropout">
+                    <figcaption>Figure 5: Zoomed-in crops from broken seeds at 75% random dropout. High-frequency noise, color distortion, incoherent regions. Not every seed &mdash; maybe 1 in 4 &mdash; but enough to be a problem.</figcaption>
+                </figure>
+
+                <p>Some seeds consistently produce these artifacts. It's not random quality variation &mdash; it's a specific failure mode. What's going on?</p>
+
+                <h2 id="attention-sinks">The Side Quest: Hunting Attention Sinks</h2>
+
+                <p>
+                    I stared at the broken seeds for a while, then had a hypothesis: maybe some tokens are more important than others. At 75% random dropout, we're probably dropping some critical tokens that the DiT really needs.
+                </p>
+
+                <p>To test this, I dug into what tokens actually exist in the conditioning sequence. The full VL embedding isn't just visual tokens &mdash; it's wrapped in a chat template:</p>
+
+<pre><code>&lt;|im_start|&gt; system \n You are a helpful assistant. &lt;|im_end|&gt; \n
+&lt;|im_start|&gt; user \n &lt;|vision_start|&gt; [visual tokens] &lt;|vision_end|&gt; &lt;|im_end|&gt; \n
+&lt;|im_start|&gt; assistant \n</code></pre>
+
+                <p>
+                    There are <strong>template tokens</strong> (the chat scaffolding &mdash; ~20 tokens) and <strong>visual tokens</strong> (the actual image information &mdash; ~1000&ndash;1500 tokens at 768&times;768 depending on aspect ratio). Random dropout doesn't distinguish between them.
+                </p>
+
+                <p>
+                    Now, <strong>attention sinks</strong> are a well-studied phenomenon in causal language models<span class="sidenote-ref"></span><span class="sidenote">In any causal (left-to-right) transformer, early tokens in the sequence accumulate disproportionate attention mass simply because every subsequent token can attend to them. They become "sinks" &mdash; dumping grounds for attention that doesn't have anywhere more specific to go.</span>. It's important to distinguish two types of sinks in our conditioning sequence, because they behave very differently under dropout:
+                </p>
+
+                <div class="info-box">
+                    <p><strong>Template (text) sinks</strong></p>
+                    <p>
+                        The chat scaffolding tokens (<code>&lt;|im_start|&gt;</code>, <code>system</code>, <code>&lt;|im_end|&gt;</code>, <code>assistant</code>, etc.) at the start and end of the sequence. These are <em>structural</em> sinks &mdash; they sit at extreme positions in the causal ordering and absorb massive attention from the DiT. Crucially, each template token is <strong>unique and irreplaceable</strong>. There's only one <code>&lt;|im_start|&gt;</code>, one <code>system</code> token. The DiT has learned to rely on these specific tokens as global context anchors during generation. Drop any of them and there's nothing else in the sequence that can compensate. These are <strong>critical</strong> and must never be dropped.
+                    </p>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>Visual sinks</strong></p>
+                    <p>
+                        The top-left visual patch tokens, which absorb extra attention simply because they appear first in the visual token sequence (due to raster-scan ordering + causal attention). These are <em>positional</em> sinks &mdash; high-attention but not actually carrying unique information. After passing through 34 layers of the VL LLM with causal self-attention, image information gets <strong>redundantly spread across all visual tokens</strong>. Each visual token encodes a mixed representation of the full image context, not just its local patch. So dropping any individual visual token &mdash; even a high-attention one &mdash; barely matters, because the same information is recoverable from neighboring tokens. This redundancy is why we can drop 95% of visual tokens and still get coherent generations.
+                    </p>
+                </div>
+
+                <p>I captured the DiT's attention patterns over the conditioning tokens during denoising, and the sink structure jumped right out:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_attention_combined.png" alt="Attention heatmap showing template sinks and denoising progression">
+                    <figcaption>Figure 6: Top &mdash; attention mass per conditioning token (y-axis) across denoising timesteps (x-axis). Bright lines = high attention. The first few tokens at index 0&ndash;15 are the prefix template sinks (<code>&lt;|im_start|&gt; system \n You are a helpful assistant. &lt;|im_end|&gt; \n &lt;|im_start|&gt; user \n</code>). The bright lines at the bottom (~index 240&ndash;280) are the suffix template sinks (<code>&lt;|vision_end|&gt; &lt;|im_end|&gt; \n &lt;|im_start|&gt; assistant \n</code>). The dark middle region is the actual visual tokens &mdash; each one receives relatively little individual attention. Bottom &mdash; the corresponding denoising progression from noise to final image.</figcaption>
+                </figure>
+
+                <p>
+                    Figure 6 tells the story clearly: the bright horizontal lines at the top and bottom are template sinks &mdash; they receive 10&ndash;50x more attention than individual visual tokens. The prefix sinks (token 0: <code>&lt;|im_start|&gt;</code>, token 1: <code>system</code>) are the biggest attention magnets, but the suffix sinks (<code>&lt;|im_end|&gt;</code>, <code>assistant</code>) also absorb significant attention. These aren't just background scaffolding. The DiT has learned to use them as global context anchors during generation.
+                </p>
+
+                <p>
+                    This is why random dropout at 75% causes artifacts intermittently. With ~20 template tokens out of ~1000+ total, they're a tiny fraction &mdash; but at 75% dropout you're dropping ~750 tokens uniformly at random. The chance of hitting <em>at least one</em> of the ~20 template tokens is essentially 100%. The damage depends on <em>which</em> template token gets dropped &mdash; dropping <code>&lt;|im_start|&gt;</code> at position 0 (the biggest sink) is catastrophic, while dropping a less critical one might be survivable.
+                </p>
+
+                <p>So I ran a systematic ablation &mdash; keep or drop specific token groups and see what breaks:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_attention_sinks.png" alt="Ablation showing effects of dropping different token groups">
+                    <figcaption>Figure 7: Selectively dropping different token groups across 3 test images. &ldquo;Vis Only&rdquo; (all template dropped) and &ldquo;No Prefix&rdquo; (system prompt dropped) produce the worst artifacts (red borders). Dropping visual tokens &mdash; even the high-attention ones &mdash; is much safer.</figcaption>
+                </figure>
+
+                <p>The findings from Figure 7 were clear:</p>
+
+                <p>
+                    <strong>Dropping all template tokens (&ldquo;Vis Only&rdquo;) produces consistent artifacts.</strong> This is the smoking gun. These template tokens are load-bearing attention sinks that the DiT relies on for global context.
+                </p>
+
+                <p>
+                    <strong>The prefix matters more than the suffix.</strong> Dropping just the prefix (system prompt + user header before <code>&lt;|vision_start|&gt;</code>) produces more severe artifacts than dropping the suffix (tokens after <code>&lt;|vision_end|&gt;</code>). The prefix tokens, particularly <code>&lt;|im_start|&gt;</code> and <code>system</code>, are the primary sinks.
+                </p>
+
+                <p>
+                    <strong>Dropping visual tokens is relatively safe.</strong> Even dropping the top 10&ndash;25% of visual tokens (the positional sinks &mdash; top-left patches that absorb extra attention due to causal ordering) degrades quality much less than dropping any template tokens.
+                </p>
+
+                <p>
+                    <strong>What about data-driven sink removal?</strong><span class="sidenote-ref"></span><span class="sidenote">The &ldquo;Drop Sinks&rdquo; column in Figure 7 takes a smarter approach &mdash; instead of dropping visual tokens randomly by position, we run a single DiT forward pass to capture which visual tokens receive the most attention, then drop the top 10% highest-attention visual tokens.</span> The idea: surgically remove the visual sinks. The result: it barely changes anything. The visual sinks aren't carrying critical information &mdash; they're just absorbing excess attention due to causal position bias. Dropping them doesn't hurt, but it doesn't increase diversity either.
+                </p>
+
+                <p>
+                    We also tried more aggressive post-encoding sink removal &mdash; dropping 5&ndash;30% of highest-attention visual tokens after VL encoding. Same story: at layer 34, every remaining token already encodes a mixed representation of the full image. Removing individual tokens after the LLM has already done its mixing doesn't selectively remove any semantic content. The information has already been blended.
+                </p>
+
+                <p>
+                    This is actually good news for the practical approach: <strong>random dropout within visual tokens works just as well as sink-aware dropout</strong>. Since visual sinks don't carry special information, there's no benefit to identifying and preserving them. And sink-aware dropping requires an extra DiT forward pass to capture attention patterns &mdash; a significant computational overhead. Random dropout is free.
+                </p>
+
+                <h2 id="vision-only">The Fix: Vision-Only Token Dropout</h2>
+
+                <p>
+                    The solution writes itself: <strong>only drop visual tokens, never touch the template tokens.</strong>
+                </p>
+
+                <p>
+                    I identify visual token boundaries using the <code>&lt;|vision_start|&gt;</code> and <code>&lt;|vision_end|&gt;</code> special token IDs, then apply dropout exclusively within that range. Template tokens &mdash; the system prompt, chat formatting, everything outside the vision markers &mdash; are always preserved.
+                </p>
+
+                <figure class="figure-wide">
+                    <img src="fig_vis_dropout_results.png" alt="Vision-only token dropout at increasing rates">
+                    <figcaption>Figure 8: Vision-only token dropout at increasing rates. 0% = baseline (faithful reproduction). 75% = nice diversity while preserving subject. 85&ndash;95% = increasingly creative variations. 99% = very loose semantic connection.</figcaption>
+                </figure>
+
+                <p>
+                    This works beautifully. No more random artifacts. The template sink tokens are always intact, so the DiT always has its global context. And we can push the dropout rate much higher &mdash; 85%, even 95% &mdash; without the artifact problem because we're only dropping visual information, not structural anchors.
+                </p>
+
+                <p>The sweet spot depends on what you want:</p>
+
+                <ul>
+                    <li><strong>75% dropout</strong>: Good diversity while keeping subject identity strong</li>
+                    <li><strong>85% dropout</strong>: More creative variations &mdash; the model takes bigger liberties with composition and color</li>
+                    <li><strong>95% dropout</strong>: Very loose interpretation &mdash; captures the broad semantic gist but freely reimagines everything else</li>
+                    <li><strong>99% dropout</strong>: Barely connected to the input</li>
+                </ul>
+
+                <p>And the seed diversity problem from Figure 1? Solved:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_vis_dropout_seeds.png" alt="Seed diversity comparison with vision-only dropout">
+                    <figcaption>Figure 9: 9 images, 4 seeds each. Baseline (left): nearly identical outputs across seeds. With 85% vision-only dropout (right): genuinely diverse variations. The mode collapse problem from Figure 1 is fixed.</figcaption>
+                </figure>
+
+                <h3>Caveats</h3>
+
+                <p>
+                    It's not a perfect solution of course. At high dropout rates, things can go wrong in interesting ways. Subjects sometimes vanish entirely &mdash; a woman standing next to a train just&hellip; disappears from the scene. The rendering style can shift unexpectedly &mdash; a stylized 3D illustration becomes photorealistic. Object counts get mangled &mdash; two cats merge into one. One interesting pattern: the model tends to recycle colors from the original image (or at least how the VLM perceives it to be) rather than introducing genuinely new ones &mdash; the color palette stays anchored to whatever information remains. These are the tradeoffs of aggressive information dropping: the model fills in what it doesn't know, and sometimes it fills in wrong.
+                </p>
+
+                <p>
+                    In practice, the dropout rate is a user-controlled knob with a clear tradeoff. At <strong>75% dropout</strong>, the subject identity is preserved &mdash; you get the same person, object, or scene but in a different composition or pose. At <strong>95% dropout</strong>, the model takes much more creative liberty &mdash; you get the <em>gist</em> of the input but reimagined freely. Think of it as a spectrum from &ldquo;variation&rdquo; to &ldquo;inspiration.&rdquo; The right setting depends on the use case, not a single sweet spot.
+                </p>
+
+                <h3>Steering color with a palette image</h3>
+
+                <p>
+                    One limitation noted above: the model tends to recycle colors from the surviving visual tokens. What if you could steer the color palette while still getting diverse compositions?
+                </p>
+
+                <p>
+                    The VL model can encode multiple images in a single pass &mdash; they just become separate blocks of visual tokens in the conditioning sequence. So I tried a simple trick: encode the input image alongside a second &ldquo;palette&rdquo; image (a photo with the desired color scheme), apply 95% dropout to <em>both</em> images' visual tokens, and generate.
+                </p>
+
+                <figure class="figure-wide">
+                    <img src="fig_color_palette.png" alt="Color palette steering with dual image encoding">
+                    <figcaption>Figure 10: Input image + palette reference &rarr; diverse generations that pick up color cues from the palette image. Both images get 95% vision dropout. The palette image doesn't control composition &mdash; it nudges the color distribution.</figcaption>
+                </figure>
+
+                <p>
+                    The results are mixed but promising. When it works, you get generations that borrow color temperature and dominant hues from the palette image while still taking creative liberties with the subject. The palette influence is subtle though &mdash; it's more of a nudge than a hard constraint, since both images are getting aggressively dropped.<span class="sidenote-ref"></span><span class="sidenote">Applying dropout to both images is important: keeping the palette image intact produces striped/tiled background artifacts where the model copies palette patches verbatim.</span>
+                </p>
+
+                <h3>Layer choice as a second diversity knob</h3>
+
+                <p>
+                    All results so far use layer 34 &mdash; the penultimate LLM layer. But what happens if we tap an earlier layer? I ran the same dropout sweep at layer 24 and compared layer 34 at 85% dropout against layer 24 at 95% dropout:
+                </p>
+
+                <figure class="figure-wide">
+                    <img src="fig_layer_comparison.png" alt="Layer 24 vs layer 34 comparison">
+                    <figcaption>Figure 11: Layer 34 at 85% dropout vs layer 24 at 95% dropout, 3 seeds each. Despite dropping more tokens, layer 24 produces more diverse outputs &mdash; different compositions, color choices, and structural interpretations of the same input.</figcaption>
+                </figure>
+
+                <p>
+                    This is surprising at first glance: layer 24 with <em>more aggressive</em> dropout produces <em>more</em> diversity than layer 34 with less dropout. But it makes sense when you think about what each layer represents. By layer 34, the LLM has had 34 layers of self-attention to thoroughly extract and encode every detail of the input image &mdash; color palette, spatial layout, fine textures, object identities. The representation is rich and specific. Even after dropping 85% of tokens, the surviving 15% still carry enough of that detailed signal to strongly constrain the DiT.
+                </p>
+
+                <p>
+                    Layer 24, on the other hand, sits earlier in the LLM stack. The representation is more semantic and less pixel-faithful &mdash; it captures <em>what's in the image</em> more than <em>exactly how it looks</em>. When you then drop 95% of those already-coarser tokens, the DiT receives a very loose semantic sketch: &ldquo;there's a cat,&rdquo; &ldquo;there's a person with a headwrap,&rdquo; but without the fine-grained detail that would lock it into reproducing the original. The model has to fill in much more on its own, and it does so creatively.
+                </p>
+
+                <p>
+                    This gives us two orthogonal controls: <strong>dropout rate</strong> determines how much information survives, while <strong>layer choice</strong> determines how abstract that information was to begin with. A practical rule of thumb: if you want variations that preserve the look and feel of the original but change composition, use layer 34 with moderate dropout. If you want the model to freely reinterpret the subject, go earlier.
+                </p>
+
+                <h3>Does this generalize to text-to-image?</h3>
+
+                <p>
+                    The natural question: if dropping visual tokens increases diversity in image-to-image, does the same trick work for text-to-image? Z-Image encodes text prompts through the same VL model (just without an image), producing a sequence of text token embeddings wrapped in the same chat template. The template sinks are identical &mdash; <code>&lt;|im_start|&gt;</code>, <code>system</code>, <code>assistant</code> &mdash; but instead of visual patch tokens in the middle, you get text content tokens.
+                </p>
+
+                <p>
+                    The same logic should apply. Template sinks are structural anchors the DiT needs &mdash; don't touch them. Text content tokens, after passing through 34 LLM layers, should carry redundantly mixed representations of the prompt's semantics, just like visual tokens carry redundantly mixed image information. If that's true, we should be able to drop a large fraction of text content tokens and get diverse generations from the same prompt.
+                </p>
+
+                <p>
+                    I ran this experiment: 10 diverse prompts, 4 seeds each, dropping [0%, 75%, 85%, 95%, 99%] of text content tokens while keeping all template tokens intact. The content/template boundary is identified by encoding an empty string to find the template token count, then comparing token IDs to locate where content tokens are inserted.
+                </p>
+
+                <p><em>Results coming soon &mdash; experiment in progress.</em></p>
+
+                <h2 id="why-matters">Why This Matters</h2>
+
+                <p>
+                    The fact that we can drop 95% of visual tokens and still get coherent, semantically connected generations is itself a finding. It tells us something about how QwenVL represents images internally: by the later layers, image information is massively redundant across tokens. The subject identity, the broad color story, the semantic gist &mdash; these persist even when almost everything is thrown away. What <em>doesn't</em> survive is the fine-grained detail: exact spatial layout, precise colors, specific textures. That's the information that lives in the long tail of tokens, and that's what dropout strips away to create room for diversity.
+                </p>
+
+                <p>
+                    This redundancy also has practical implications beyond diversity. If 95% of visual tokens can be dropped without losing semantic coherence, then VL-conditioned diffusion models are dramatically over-conditioned for many use cases. There may be an efficiency play here &mdash; faster inference by pruning the conditioning sequence, or more efficient training by working with compressed representations.
+                </p>
+
+                <p>
+                    The attention sink discovery adds another layer. The DiT doesn't blindly consume a bag of embedding vectors. It has learned to use specific tokens as structural anchors. The template tokens from the chat format &mdash; which might seem like irrelevant boilerplate &mdash; have become load-bearing infrastructure that the generation process relies on. The model has developed an implicit hierarchy: a handful of structural tokens that must always be present, and hundreds of content tokens that are individually expendable.
+                </p>
+
+                <p>
+                    This has practical implications beyond our diversity hack. Anyone working with conditioning token manipulation in diffusion transformers should be careful about <em>which</em> tokens they're touching. Not all conditioning tokens are created equal &mdash; and the ones that matter most might be the ones you'd least expect.
+                </p>
+
+                <h2 id="whats-next">What's Next</h2>
+
+                <p>
+                    We've now got a pretty good image variation pipeline: the VL splice from Part 1 gives us zero-shot I2I, and vision-only dropout gives us controllable diversity. In Part 3, we will show how to take rough cut-paste composites and use SDEdit-style denoising to clean them into coherent images &mdash; approximate object composition for free.
+                </p>
+
+                <hr style="border: none; border-top: 1px dashed var(--border); margin: 2.5rem 0;">
+
+                <p style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
+                    If you would like to cite this post in an academic context, you can use this BibTeX snippet:
+                </p>
+
+                <pre><code>@misc{somepalli2026dropout,
+  author = {Somepalli, Gowthami and Somepalli, Sravani},
+  title = {Emergent Behaviour Rabbit Hole: Token Dropout for Diverse Image Variations},
+  url = {https://somepago.github.io/posts/emergent-rabbit-hole-2/},
+  year = {2026}
+}</code></pre>
+
+            </div>
+        </article>
+
+        <footer>
+            <p>&copy; 2026</p>
+        </footer>
+    </div>
+</body>
+</html>
