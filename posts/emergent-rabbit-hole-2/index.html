@@ -42,20 +42,9 @@
                     <figcaption>Same input image, same model, same pipeline. Left: four seeds produce nearly identical outputs. Right: with vision-only token dropout, each seed gives a genuinely different variation. The fix? Randomly dropping 85% of the visual tokens before generation.</figcaption>
                 </figure>
 
-                <p class="lead">
+                <p>
                     In <a href="../emergent-rabbit-hole/">Part 1</a>, I showed how a simple weight splice turns Z-Image into an image-to-image model &mdash; zero training, just swapping QwenVL's LM weights with Z-Image's. The results were surprisingly clean. But something was bugging me.
                 </p>
-
-                <p>
-                    Quick note on setup: all experiments in this post use <strong>layer 34</strong> (the penultimate LLM layer, i.e. <code>hidden_states[-2]</code>) for conditioning unless stated otherwise. This is the same default layer Z-Image uses for text-to-image. Resolution is 768&times;768 max_pixels for VL encoding.
-                </p>
-
-                <p>Look at this:</p>
-
-                <figure class="figure-wide">
-                    <img src="fig_diversity_problem.png" alt="Four different random seeds producing nearly identical outputs">
-                    <figcaption>Figure 1: Four different random seeds, nearly identical outputs. Look at the first row &mdash; yellow helmet, blue overalls, similar pose, similar wrench. The only differences are minor: hand position, tool angle. For all practical purposes these are the same image four times.</figcaption>
-                </figure>
 
                 <nav class="distill-toc">
                     <h2>Contents</h2>
@@ -68,6 +57,13 @@
                         <li><a href="#whats-next">What's Next</a></li>
                     </ol>
                 </nav>
+
+                <p>Look at the image-to-image results from the spliced model<span class="sidenote-ref"></span><span class="sidenote">Setup note: all experiments in this post use <strong>layer 34</strong> (the penultimate LLM layer, i.e. <code>hidden_states[-2]</code>) for conditioning unless stated otherwise. This is the same default layer Z-Image uses for text-to-image. Resolution is 768&times;768 max_pixels for VL encoding.</span>:</p>
+
+                <figure class="figure-wide">
+                    <img src="fig_diversity_problem.png" alt="Four different random seeds producing nearly identical outputs">
+                    <figcaption>Figure 1: Four different random seeds, nearly identical outputs. Look at the first row &mdash; yellow helmet, blue overalls, similar pose, similar wrench. The only differences are minor: hand position, tool angle. For all practical purposes these are the same image four times.</figcaption>
+                </figure>
 
                 <p>
                     Two things bothered me: <strong>1)</strong> the generated images are too similar to the original &mdash; same color palette, same outfits, same composition. This defeats the whole point if variations are just slightly reshuffled copies. <strong>2)</strong> generations across different seeds are nearly identical. Z-Image-Turbo has well-known mode collapse, but it's particularly bad with image conditioning. The VL embeddings are so strong that the DiT has very little room to explore.
@@ -186,19 +182,13 @@
                     Now, <strong>attention sinks</strong> are a well-studied phenomenon in causal language models<span class="sidenote-ref"></span><span class="sidenote">In any causal (left-to-right) transformer, early tokens in the sequence accumulate disproportionate attention mass simply because every subsequent token can attend to them. They become "sinks" &mdash; dumping grounds for attention that doesn't have anywhere more specific to go.</span>. It's important to distinguish two types of sinks in our conditioning sequence, because they behave very differently under dropout:
                 </p>
 
-                <div class="info-box">
-                    <p><strong>Template (text) sinks</strong></p>
-                    <p>
-                        The chat scaffolding tokens (<code>&lt;|im_start|&gt;</code>, <code>system</code>, <code>&lt;|im_end|&gt;</code>, <code>assistant</code>, etc.) at the start and end of the sequence. These are <em>structural</em> sinks &mdash; they sit at extreme positions in the causal ordering and absorb massive attention from the DiT. Crucially, each template token is <strong>unique and irreplaceable</strong>. There's only one <code>&lt;|im_start|&gt;</code>, one <code>system</code> token. The DiT has learned to rely on these specific tokens as global context anchors during generation. Drop any of them and there's nothing else in the sequence that can compensate. These are <strong>critical</strong> and must never be dropped.
-                    </p>
-                </div>
+                <p>
+                    <strong>Template (text) sinks</strong> are the chat scaffolding tokens (<code>&lt;|im_start|&gt;</code>, <code>system</code>, <code>&lt;|im_end|&gt;</code>, <code>assistant</code>, etc.) at the start and end of the sequence. These are <em>structural</em> sinks &mdash; they sit at extreme positions in the causal ordering and absorb massive attention from the DiT. Crucially, each template token is unique and irreplaceable. There's only one <code>&lt;|im_start|&gt;</code>, one <code>system</code> token. The DiT has learned to rely on these specific tokens as global context anchors during generation. Drop any of them and there's nothing else in the sequence that can compensate. These are critical and must never be dropped.
+                </p>
 
-                <div class="info-box">
-                    <p><strong>Visual sinks</strong></p>
-                    <p>
-                        The top-left visual patch tokens, which absorb extra attention simply because they appear first in the visual token sequence (due to raster-scan ordering + causal attention). These are <em>positional</em> sinks &mdash; high-attention but not actually carrying unique information. After passing through 34 layers of the VL LLM with causal self-attention, image information gets <strong>redundantly spread across all visual tokens</strong>. Each visual token encodes a mixed representation of the full image context, not just its local patch. So dropping any individual visual token &mdash; even a high-attention one &mdash; barely matters, because the same information is recoverable from neighboring tokens. This redundancy is why we can drop 95% of visual tokens and still get coherent generations.
-                    </p>
-                </div>
+                <p>
+                    <strong>Visual sinks</strong> are the top-left visual patch tokens, which absorb extra attention simply because they appear first in the visual token sequence (due to raster-scan ordering + causal attention). These are <em>positional</em> sinks &mdash; high-attention but not actually carrying unique information. After passing through 34 layers of the VL LLM with causal self-attention, image information gets redundantly spread across all visual tokens. Each visual token encodes a mixed representation of the full image context, not just its local patch. So dropping any individual visual token &mdash; even a high-attention one &mdash; barely matters, because the same information is recoverable from neighboring tokens. This redundancy is why we can drop 95% of visual tokens and still get coherent generations.
+                </p>
 
                 <p>I captured the DiT's attention patterns over the conditioning tokens during denoising, and the sink structure jumped right out:</p>
 
