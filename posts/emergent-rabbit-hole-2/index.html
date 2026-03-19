@@ -137,7 +137,7 @@
                 </figure>
 
                 <p>
-                    The progression in Figure 3 is smooth and intuitive. At low dropout the changes are subtle &mdash; maybe a slightly different wrench angle. By 50% the model is making real creative choices. At 75% it's a completely different illustration.
+                    At low dropout the changes are subtle &mdash; maybe a slightly different wrench angle. By 50% the model is making real creative choices. At 75% it's a completely different illustration.
                 </p>
 
                 <p>And when you look across multiple seeds at 75% dropout:</p>
@@ -148,7 +148,7 @@
                 </figure>
 
                 <p>
-                    The diversity is striking. Instead of four copies of the same plumber, you get four genuinely different takes. Different poses, different tools, (somewhat) different compositions. The model finally has room to be creative because the conditioning signal is sparse enough that it has to fill in the gaps.
+                    Instead of four copies of the same plumber, we get four genuinely different takes. Different poses, different tools, (somewhat) different compositions. The model finally has room to be creative because the conditioning signal is sparse enough that it has to fill in the gaps.
                 </p>
 
                 <p>
@@ -190,7 +190,7 @@
                 </p>
 
                 <p>
-                    <strong>Attention sinks</strong> are a well-studied phenomenon in causal language models<span class="sidenote-ref"></span><span class="sidenote">In any causal (left-to-right) transformer, early tokens in the sequence accumulate disproportionate attention mass simply because every subsequent token can attend to them. They become &ldquo;sinks&rdquo; &mdash; dumping grounds for attention that doesn't have anywhere more specific to go.</span>. It's important to distinguish two types of sinks in our conditioning sequence, because they behave very differently under dropout:
+                    <strong>Attention sinks</strong> are a well-studied phenomenon in causal language models<span class="sidenote-ref"></span><span class="sidenote">In any causal (left-to-right) transformer, early tokens in the sequence accumulate disproportionate attention mass simply because every subsequent token can attend to them. They become &ldquo;sinks&rdquo; &mdash; dumping grounds for attention that doesn't have anywhere more specific to go.</span>. There are two kinds of sinks in our conditioning sequence, and they behave very differently under dropout:
                 </p>
 
                 <p>
@@ -241,7 +241,7 @@
                 <h2 id="vision-only">The Fix: Vision-Only Token Dropout</h2>
 
                 <p>
-                    The solution writes itself: <strong>only drop visual tokens, never touch the template tokens.</strong>
+                    So the fix is obvious: <strong>only drop visual tokens, never touch the template tokens.</strong>
                 </p>
 
                 <p>
@@ -254,7 +254,7 @@
                 </figure>
 
                 <p>
-                    This works beautifully. No more random artifacts. The template sink tokens are always intact, so the DiT always has its global context. And we can push the dropout rate much higher &mdash; 85%, even 95% &mdash; without the artifact problem because we're only dropping visual information, not structural anchors.
+                    No more random artifacts. The template sink tokens are always intact, so the DiT always has its global context. And we can push the dropout rate much higher &mdash; 85%, even 95% &mdash; without the artifact problem because we're only dropping visual information, not structural anchors.
                 </p>
 
                 <p>The sweet spot depends on what you want:</p>
@@ -280,7 +280,7 @@
                 </p>
 
                 <p>
-                    In practice, the dropout rate is a user-controlled knob with a clear tradeoff. At <strong>75% dropout</strong>, the subject identity is preserved &mdash; you get the same person, object, or scene but in a different composition or pose. At <strong>95% dropout</strong>, the model takes much more creative liberty &mdash; you get the <em>gist</em> of the input but reimagined freely. Think of it as a spectrum from &ldquo;variation&rdquo; to &ldquo;inspiration.&rdquo; The right setting depends on the use case, not a single sweet spot.
+                    In practice, the dropout rate is a user-controlled knob with a clear tradeoff. At <strong>75% dropout</strong>, the subject identity is preserved &mdash; you get the same person, object, or scene but in a different composition or pose. At <strong>95% dropout</strong>, the model takes much more creative liberty &mdash; you get the <em>gist</em> of the input but reimagined freely. The right setting depends on the use case.
                 </p>
 
                 <h3>Steering color with a palette image</h3>
@@ -299,7 +299,7 @@
                 </figure>
 
                 <p>
-                    The results are mixed but promising. When it works, you get generations that borrow color temperature and dominant hues from the palette image while still taking creative liberties with the subject. The palette influence is subtle though &mdash; it's more of a nudge than a hard constraint, since both images are getting aggressively dropped. Applying dropout to both images is important: keeping the palette image intact produces striped/tiled background artifacts where the model copies palette patches verbatim.
+                    The results are (somewhat) promising. In most cases the background picks up color cues from the palette image, and sometimes the main subject does too. But it's not really controllable &mdash; the palette influence is more of a nudge than a hard constraint, since both images are getting aggressively dropped. One thing we found: applying dropout to both images is important. Keeping the palette image intact produces striped/tiled background artifacts where the model copies palette patches verbatim. This isn't a final solution, more work needed here.
                 </p>
 
                 <h3>Layer choice as a second diversity knob</h3>
@@ -344,19 +344,19 @@
                 <h2 id="why-matters">Why This Matters</h2>
 
                 <p>
-                    The fact that we can drop 95% of visual tokens and still get coherent, semantically connected generations is itself a finding. It tells us something about how QwenVL represents images internally: by the later layers, image information is massively redundant across tokens. The subject identity, the broad color story, the semantic gist &mdash; these persist even when almost everything is thrown away. What <em>doesn't</em> survive is the fine-grained detail: exact spatial layout, precise colors, specific textures. That's the information that lives in the long tail of tokens, and that's what dropout strips away to create room for diversity.
+                    The fact that we can drop 95% of visual tokens and still get coherent generations tells us something about how QwenVL represents images internally: by the later layers, image information is massively redundant across tokens. The subject identity, the broad color story, the semantic gist &mdash; these persist even when almost everything is thrown away. What <em>doesn't</em> survive is the fine-grained detail: exact spatial layout, precise colors, specific textures. That's the information that lives in the long tail of tokens, and that's what dropout strips away to create room for diversity.
                 </p>
 
                 <p>
-                    This redundancy also has practical implications beyond diversity. If 95% of visual tokens can be dropped without losing semantic coherence, then VL-conditioned diffusion models are dramatically over-conditioned for many use cases. There may be an efficiency play here &mdash; faster inference by pruning the conditioning sequence, or more efficient training by working with compressed representations.
+                    There's an efficiency angle here too. If 95% of visual tokens can be dropped without losing semantic coherence, then VL-conditioned diffusion models are dramatically over-conditioned for many use cases. There may be an efficiency play here &mdash; faster inference by pruning the conditioning sequence, or more efficient training by working with compressed representations.
                 </p>
 
                 <p>
-                    The attention sink discovery adds another layer. The DiT doesn't blindly consume a bag of embedding vectors. It has learned to use specific tokens as structural anchors. The template tokens from the chat format &mdash; which might seem like irrelevant boilerplate &mdash; have become load-bearing infrastructure that the generation process relies on. The model has developed an implicit hierarchy: a handful of structural tokens that must always be present, and hundreds of content tokens that are individually expendable.
+                    The attention sink thing is interesting on its own. The DiT doesn't just consume a bag of embedding vectors. It has learned to use specific tokens as structural anchors. The template tokens from the chat format &mdash; which might seem like irrelevant boilerplate &mdash; have become load-bearing infrastructure that the generation process relies on. The model has developed an implicit hierarchy: a handful of structural tokens that must always be present, and hundreds of content tokens that are individually expendable.
                 </p>
 
                 <p>
-                    This has practical implications beyond our diversity hack. Anyone working with conditioning token manipulation in diffusion transformers should be careful about <em>which</em> tokens they're touching. Not all conditioning tokens are created equal &mdash; and the ones that matter most might be the ones you'd least expect.
+                    If you're doing any kind of conditioning token manipulation in diffusion transformers, be careful about <em>which</em> tokens you're touching. The boilerplate chat template tokens might matter more than the actual content.
                 </p>
 
                 <h2 id="whats-next">What's Next</h2>
