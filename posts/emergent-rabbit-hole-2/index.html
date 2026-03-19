@@ -20,7 +20,7 @@
         <article>
             <header class="post-header">
                 <a href="../../blog.html" class="back-link">&larr; back to blog</a>
-                <h1>Emergent Behaviour Rabbit Hole: Token Dropout for Diverse Image Variations</h1>
+                <h1>Emergent Behaviour Rabbit Hole Part 2: Token Dropout for Diverse Image Variations</h1>
                 <div class="post-meta">
                     <time>March 2026</time> &middot; 15 min read
                 </div>
@@ -336,10 +336,26 @@
                 </p>
 
                 <p>
-                    We ran this experiment: 10 diverse prompts, 4 seeds each, dropping [0%, 75%, 85%, 95%, 99%] of text content tokens while keeping all template tokens intact. The content/template boundary is identified by encoding an empty string to find the template token count, then comparing token IDs to locate where content tokens are inserted.
+                    We ran this experiment: 10 diverse prompts, 4 seeds each, dropping [0%, 10%, 25%, 50%, 75%, 95%] of text content tokens while keeping all template tokens intact. The content/template boundary is identified by encoding an empty string to find the template token count, then comparing token IDs to locate where content tokens are inserted.
                 </p>
 
-                <p><em>Results coming soon &mdash; experiment in progress.</em></p>
+                <figure class="figure-wide">
+                    <img src="fig_text_dropout_progression.png" alt="Text content token dropout from 0% to 95%">
+                    <figcaption>Figure 12: Text content token dropout from 0% to 95% across 5 prompts. At 10&ndash;25%, the semantic core is preserved but details shift &mdash; the Wonderland poster gets a different layout, the portrait subtly changes styling, the cats shift colors. By 50&ndash;75%, prompts start breaking &mdash; the train loses its foliage tunnel, the angel loses coherence. At 95%, it's barely connected to the original prompt.</figcaption>
+                </figure>
+
+                <p>
+                    The answer: <strong>yes, but with a much tighter sweet spot.</strong> Text dropout at 10&ndash;25% produces meaningful variation while keeping the prompt's core intent intact. But it degrades much faster than vision dropout &mdash; by 50&ndash;75% the generations are already losing key prompt details. This makes sense: text prompts have far fewer content tokens than images (tens vs hundreds-thousands), so each dropped token removes a larger fraction of the semantic signal. There's less redundancy to lean on.
+                </p>
+
+                <figure class="figure-wide">
+                    <img src="fig_text_dropout_seeds.png" alt="Text dropout seed diversity comparison">
+                    <figcaption>Figure 13: Baseline (0%) vs 25% text dropout, 3 seeds each. Five prompts: portrait with veil, line sketch, silhouette illustration, Japanese train scene, floral portrait. T2I already has more seed diversity than I2I at baseline (mode collapse is less severe without image conditioning). Text dropout at 25% adds further variation &mdash; subtle changes in pose, styling, color balance, and composition.</figcaption>
+                </figure>
+
+                <p>
+                    The practical upshot: text token dropout works as a diversity mechanism, but it's a scalpel rather than a sledgehammer. The safe range is roughly 10&ndash;25% &mdash; enough to get the model to reinterpret details while respecting the overall prompt. This confirms that token dropout is a general phenomenon, not something specific to visual tokens. The underlying mechanism is the same: after 34 LLM layers, token representations are redundantly mixed, so dropping a fraction forces the downstream model to fill in gaps creatively.
+                </p>
 
                 <h2 id="why-matters">Why This Matters</h2>
 
