@@ -43,7 +43,7 @@
                 </figure>
 
                 <p>
-                    In <a href="../emergent-rabbit-hole/">Part 1</a>, I showed how a simple weight splice turns Z-Image into an image-to-image model &mdash; zero training, just swapping QwenVL's LM weights with Z-Image's. The results were surprisingly clean. But something was bugging me.
+                    In <a href="../emergent-rabbit-hole/">Part 1</a>, we showed how a simple weight splice turns Z-Image into an image-to-image model &mdash; zero training, just swapping QwenVL's LM weights with Z-Image's. The results were surprisingly clean. However...
                 </p>
 
                 <nav class="distill-toc">
@@ -66,14 +66,14 @@
                 </figure>
 
                 <p>
-                    Two things bothered me: <strong>1)</strong> the generated images are too similar to the original &mdash; same color palette, same outfits, same composition. This defeats the whole point if variations are just slightly reshuffled copies. <strong>2)</strong> generations across different seeds are nearly identical. Z-Image-Turbo has well-known mode collapse, but it's particularly bad with image conditioning. The VL embeddings are so strong that the DiT has very little room to explore.
+                    Two things bothered us: <strong>1)</strong> the generated images are too similar to the original &mdash; same color palette, same outfits, same composition. This defeats the whole point if variations are just slightly reshuffled copies. <strong>2)</strong> generations across different seeds are nearly identical. Z-Image-Turbo has well-known mode collapse, but it's particularly bad with image conditioning. The VL embeddings are so strong that the DiT has very little room to explore.
                 </p>
 
-                <p>So I set out to fix at least the first problem and hopefully get the second one for free along the way.</p>
+                <p>So we set out to fix at least the first problem and hopefully get the second one for free along the way.</p>
 
                 <h2 id="ablations">Different Ablations</h2>
 
-                <p>I tried a bunch of standard approaches to increase diversity. Here's the rundown &mdash; most of them didn't work.</p>
+                <p>We tried a bunch of standard approaches to increase diversity. Here's the rundown &mdash; most of them didn't work.</p>
 
                 <table>
                     <tr>
@@ -122,12 +122,12 @@
 
                 <figure class="figure-wide">
                     <img src="fig_ablation_grid.png" alt="Ablation comparison showing different diversity methods">
-                    <figcaption>Figure 2: Baseline vs one setting per method, all at seed 42. Noise and temperature barely change anything from baseline. Multicrop and shuffle produce slight variation. PCA is straight up garbled. Dropout at just 50% already shows a meaningful shift &mdash; different tool, different pose. The simplest method wins.</figcaption>
+                    <figcaption>Figure 2: Baseline vs one setting per method. Most methods at seed 42 &mdash; dropout shown at seed 777 to highlight the diversity. Noise and temperature barely change anything from baseline. Multicrop and shuffle produce slight variation. PCA is straight up garbled. Dropout at 75% produces a completely different outfit and pose. The simplest method wins.</figcaption>
                 </figure>
 
                 <h2 id="token-dropout">Token Dropout: The Clear Winner</h2>
 
-                <p>Then I tried the simplest possible thing: <strong>randomly remove a fraction of tokens from the conditioning sequence</strong> before passing it to the DiT.</p>
+                <p>Then we tried the simplest possible thing: <strong>randomly remove a fraction of tokens from the conditioning sequence</strong> before passing it to the DiT.</p>
 
                 <p>Here's what happens as you increase the dropout rate:</p>
 
@@ -152,7 +152,7 @@
                 </p>
 
                 <p>
-                    But there's a catch. Look at seed s2024 &mdash; the one with the red border in Figure 4. Weird noisy artifacts, color shifts. Let me zoom in:
+                    But there's a catch. Look at seed s2024 &mdash; the one with the red border in Figure 4. Weird noisy artifacts, color shifts. Zooming in:
                 </p>
 
                 <figure class="figure-wide">
@@ -165,10 +165,10 @@
                 <h2 id="attention-sinks">The Side Quest: Hunting Attention Sinks</h2>
 
                 <p>
-                    I stared at the broken seeds for a while, then had a hypothesis: maybe some tokens are more important than others. At 75% random dropout, we're probably dropping some critical tokens that the DiT really needs.
+                    We stared at the broken seeds for a while, then had a hypothesis: maybe some tokens are more important than others. At 75% random dropout, we're probably dropping some critical tokens that the DiT really needs.
                 </p>
 
-                <p>To test this, I dug into what tokens actually exist in the conditioning sequence. The full VL embedding isn't just visual tokens &mdash; it's wrapped in a chat template:</p>
+                <p>To test this, we dug into what tokens actually exist in the conditioning sequence. The full VL embedding isn't just visual tokens &mdash; it's wrapped in a chat template:</p>
 
 <pre><code>&lt;|im_start|&gt; system \n You are a helpful assistant. &lt;|im_end|&gt; \n
 &lt;|im_start|&gt; user \n &lt;|vision_start|&gt; [visual tokens] &lt;|vision_end|&gt; &lt;|im_end|&gt; \n
@@ -190,7 +190,7 @@
                     <strong>Visual sinks</strong> are the top-left visual patch tokens, which absorb extra attention simply because they appear first in the visual token sequence (due to raster-scan ordering + causal attention). These are <em>positional</em> sinks &mdash; high-attention but not actually carrying unique information. After passing through 34 layers of the VL LLM with causal self-attention, image information gets redundantly spread across all visual tokens. Each visual token encodes a mixed representation of the full image context, not just its local patch. So dropping any individual visual token &mdash; even a high-attention one &mdash; barely matters, because the same information is recoverable from neighboring tokens. This redundancy is why we can drop 95% of visual tokens and still get coherent generations.
                 </p>
 
-                <p>I captured the DiT's attention patterns over the conditioning tokens during denoising, and the sink structure jumped right out:</p>
+                <p>We captured the DiT's attention patterns over the conditioning tokens during denoising, and the sink structure jumped right out:</p>
 
                 <figure class="figure-wide">
                     <img src="fig_attention_combined.png" alt="Attention heatmap showing template sinks and denoising progression">
@@ -205,7 +205,7 @@
                     This is why random dropout at 75% causes artifacts intermittently. With ~20 template tokens out of ~1000+ total, they're a tiny fraction &mdash; but at 75% dropout you're dropping ~750 tokens uniformly at random. The chance of hitting <em>at least one</em> of the ~20 template tokens is essentially 100%. The damage depends on <em>which</em> template token gets dropped &mdash; dropping <code>&lt;|im_start|&gt;</code> at position 0 (the biggest sink) is catastrophic, while dropping a less critical one might be survivable.
                 </p>
 
-                <p>So I ran a systematic ablation &mdash; keep or drop specific token groups and see what breaks:</p>
+                <p>So we ran a systematic ablation &mdash; keep or drop specific token groups and see what breaks:</p>
 
                 <figure class="figure-wide">
                     <img src="fig_attention_sinks.png" alt="Ablation showing effects of dropping different token groups">
@@ -245,7 +245,7 @@
                 </p>
 
                 <p>
-                    I identify visual token boundaries using the <code>&lt;|vision_start|&gt;</code> and <code>&lt;|vision_end|&gt;</code> special token IDs, then apply dropout exclusively within that range. Template tokens &mdash; the system prompt, chat formatting, everything outside the vision markers &mdash; are always preserved.
+                    We identify visual token boundaries using the <code>&lt;|vision_start|&gt;</code> and <code>&lt;|vision_end|&gt;</code> special token IDs, then apply dropout exclusively within that range. Template tokens &mdash; the system prompt, chat formatting, everything outside the vision markers &mdash; are always preserved.
                 </p>
 
                 <figure class="figure-wide">
@@ -290,7 +290,7 @@
                 </p>
 
                 <p>
-                    The VL model can encode multiple images in a single pass &mdash; they just become separate blocks of visual tokens in the conditioning sequence. So I tried a simple trick: encode the input image alongside a second &ldquo;palette&rdquo; image (a photo with the desired color scheme), apply 95% dropout to <em>both</em> images' visual tokens, and generate.
+                    The VL model can encode multiple images in a single pass &mdash; they just become separate blocks of visual tokens in the conditioning sequence. So we tried a simple trick: encode the input image alongside a second &ldquo;palette&rdquo; image (a photo with the desired color scheme), apply 95% dropout to <em>both</em> images' visual tokens, and generate.
                 </p>
 
                 <figure class="figure-wide">
@@ -299,13 +299,13 @@
                 </figure>
 
                 <p>
-                    The results are mixed but promising. When it works, you get generations that borrow color temperature and dominant hues from the palette image while still taking creative liberties with the subject. The palette influence is subtle though &mdash; it's more of a nudge than a hard constraint, since both images are getting aggressively dropped.<span class="sidenote-ref"></span><span class="sidenote">Applying dropout to both images is important: keeping the palette image intact produces striped/tiled background artifacts where the model copies palette patches verbatim.</span>
+                    The results are mixed but promising. When it works, you get generations that borrow color temperature and dominant hues from the palette image while still taking creative liberties with the subject. The palette influence is subtle though &mdash; it's more of a nudge than a hard constraint, since both images are getting aggressively dropped. Applying dropout to both images is important: keeping the palette image intact produces striped/tiled background artifacts where the model copies palette patches verbatim.
                 </p>
 
                 <h3>Layer choice as a second diversity knob</h3>
 
                 <p>
-                    All results so far use layer 34 &mdash; the penultimate LLM layer. But what happens if we tap an earlier layer? I ran the same dropout sweep at layer 24 and compared layer 34 at 85% dropout against layer 24 at 95% dropout:
+                    All results so far use layer 34 &mdash; the penultimate LLM layer. But what happens if we tap an earlier layer? We ran the same dropout sweep at layer 24 and compared layer 34 at 85% dropout against layer 24 at 95% dropout:
                 </p>
 
                 <figure class="figure-wide">
@@ -336,7 +336,7 @@
                 </p>
 
                 <p>
-                    I ran this experiment: 10 diverse prompts, 4 seeds each, dropping [0%, 75%, 85%, 95%, 99%] of text content tokens while keeping all template tokens intact. The content/template boundary is identified by encoding an empty string to find the template token count, then comparing token IDs to locate where content tokens are inserted.
+                    We ran this experiment: 10 diverse prompts, 4 seeds each, dropping [0%, 75%, 85%, 95%, 99%] of text content tokens while keeping all template tokens intact. The content/template boundary is identified by encoding an empty string to find the template token count, then comparing token IDs to locate where content tokens are inserted.
                 </p>
 
                 <p><em>Results coming soon &mdash; experiment in progress.</em></p>
